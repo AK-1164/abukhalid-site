@@ -1,0 +1,271 @@
+:root {
+  --blue: #0d1b2a;
+  --blue-light: #1b2f4a;
+  --gold: #d4af37;
+  --gold-soft: #f2d98d;
+  --bg: #f5f7fa;
+  --text: #0f172a;
+  --radius: 16px;
+  --container: 1100px;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: "Segoe UI", system-ui, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  line-height: 1.7;
+}
+
+a {
+  text-decoration: none;
+  color: inherit;
+}
+
+.container {
+  width: min(var(--container), calc(100% - 32px));
+  margin: auto;
+}
+
+/* الشريط العلوي */
+.top-bar {
+  background: var(--blue);
+  color: white;
+  font-size: 14px;
+  display: flex;
+  justify-content: space-between;
+  padding: 6px 16px;
+}
+
+/* الهيدر */
+.header {
+  background: white;
+  border-bottom: 2px solid var(--gold);
+}
+
+.header-inner {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 0;
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.logo {
+  width: 60px;
+  height: auto;
+}
+
+.brand-text h1 {
+  margin: 0;
+  font-size: 20px;
+  color: var(--blue);
+}
+
+.brand-text p {
+  margin: 0;
+  font-size: 13px;
+  color: var(--gold);
+}
+
+.nav {
+  display: flex;
+  gap: 14px;
+}
+
+.nav a {
+  padding: 8px 12px;
+  border-radius: 8px;
+  font-weight: 600;
+}
+
+.nav a:hover {
+  background: var(--gold-soft);
+}
+
+/* الهيرو */
+.hero {
+  background: linear-gradient(135deg, var(--blue), var(--blue-light));
+  color: white;
+  padding: 60px 0;
+}
+
+.hero-grid {
+  display: grid;
+  grid-template-columns: 1.2fr 0.8fr;
+  gap: 20px;
+}
+
+.hero-text h2 {
+  font-size: 30px;
+  margin-bottom: 12px;
+  white-space: nowrap;
+}
+
+
+.hero-text span {
+  color: var(--gold-soft);
+}
+
+.hero-points {
+  list-style: none;
+  padding: 0;
+}
+
+.hero-points li {
+  margin-bottom: 6px;
+}
+
+.btn-primary {
+  display: inline-block;
+  margin-top: 16px;
+  background: var(--gold);
+  color: var(--blue);
+  padding: 12px 20px;
+  border-radius: 12px;
+  font-weight: bold;
+}
+
+.btn-primary:hover {
+  filter: brightness(1.1);
+}
+
+/* بطاقة الخدمات */
+.hero-card {
+  background: white;
+  color: var(--text);
+  padding: 20px;
+  border-radius: var(--radius);
+  border-top: 6px solid var(--gold);
+}
+
+.hero-card h3 {
+  margin-top: 0;
+}
+
+/* الأقسام */
+.section {
+  padding: 50px 0;
+}
+
+.section-alt {
+  background: #eef2f7;
+}
+
+.section-title {
+  text-align: center;
+  margin-bottom: 30px;
+  color: var(--blue);
+}
+
+/* الكروت */
+.cards {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 20px;
+}
+
+.card {
+  background: white;
+  padding: 20px;
+  border-radius: var(--radius);
+  border-bottom: 4px solid var(--gold);
+}
+
+/* الخطوات */
+.steps {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 20px;
+  text-align: center;
+}
+
+.step span {
+  display: inline-block;
+  background: var(--gold);
+  color: var(--blue);
+  width: 40px;
+  height: 40px;
+  line-height: 40px;
+  border-radius: 50%;
+  font-weight: bold;
+  margin-bottom: 10px;
+}
+
+/* لماذا نحن */
+.why-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 14px;
+  max-width: 600px;
+  margin: auto;
+}
+
+/* FAQ */
+details {
+  background: white;
+  padding: 14px;
+  border-radius: 10px;
+  margin-bottom: 10px;
+}
+
+/* الفوتر */
+.footer {
+  background: var(--blue);
+  color: white;
+  padding: 20px 0;
+  text-align: center;
+}
+
+/* زر واتساب */
+.whatsapp-float {
+  position: fixed;
+  bottom: 20px;
+  left: 20px;
+  background: #25d366;
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 6px 16px rgba(0,0,0,0.3);
+  z-index: 1000;
+}
+
+.whatsapp-float img {
+  width: 32px;
+}
+
+/* تجاوب */
+@media (max-width: 900px) {
+  .hero-grid,
+  .cards,
+  .steps,
+  .why-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* تصغير العنوان على الجوال فقط */
+@media (max-width: 500px) {
+  .hero-text h2 {
+    font-size: 22px;
+    white-space: nowrap;
+  }
+}
+
+  .nav {
+    display: none;
+  }
+}
+
