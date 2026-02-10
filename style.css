@@ -268,4 +268,38 @@ details {
     display: none;
   }
 }
+//* تنسيق الصناديق في الفوتر - نسخة الحل النهائي */
+.footer-services .service-column details {
+    background-color: #0d1b2a !important; /* خلفية كحلي داكن جداً */
+    border: 2px solid #d4af37 !important; /* إطار ذهبي واضح */
+    border-radius: 12px !important;
+    margin-bottom: 15px !important;
+    padding: 15px !important;
+    display: block !important;
+    overflow: visible !important;
+}
 
+/* تلوين العنوان (الذي يظهر عند التحديد فقط) */
+.footer-services .service-column summary {
+    color: #ffffff !important; 
+    -webkit-text-fill-color: #ffffff !important; /* إجبار تلوين النص للمتصفحات */
+    font-size: 18px !important; /* تكبير الخط للتأكد من رؤيته */
+    font-weight: bold !important;
+    text-align: right !important;
+    cursor: pointer !important;
+    display: block !important;
+    min-height: 20px !important;
+    opacity: 1 !important;
+    visibility: visible !important;
+}
+
+/* تلوين الوصف */
+.footer-services .service-column p {
+    color: #f2d98d !important;
+    -webkit-text-fill-color: #f2d98d !important;
+    margin-top: 12px !important;
+    font-size: 15px !important;
+    border-top: 1px solid rgba(255,255,255,0.2) !important;
+    padding-top: 10px !important;
+    display: block !important;
+}
