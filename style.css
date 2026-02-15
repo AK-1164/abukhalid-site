@@ -9,9 +9,7 @@
   --container: 1100px;
 }
 
-* {
-  box-sizing: border-box;
-}
+* { box-sizing: border-box; }
 
 body {
   margin: 0;
@@ -21,10 +19,7 @@ body {
   line-height: 1.7;
 }
 
-a {
-  text-decoration: none;
-  color: inherit;
-}
+a { text-decoration: none; color: inherit; }
 
 .container {
   width: min(var(--container), calc(100% - 32px));
@@ -52,6 +47,8 @@ a {
   justify-content: space-between;
   align-items: center;
   padding: 12px 0;
+  gap: 14px;
+  flex-wrap: wrap;
 }
 
 .brand {
@@ -60,10 +57,7 @@ a {
   gap: 12px;
 }
 
-.logo {
-  width: 60px;
-  height: auto;
-}
+.logo { width: 60px; height: auto; }
 
 .brand-text h1 {
   margin: 0;
@@ -88,9 +82,54 @@ a {
   font-weight: 600;
 }
 
-.nav a:hover {
-  background: var(--gold-soft);
+.nav a:hover { background: var(--gold-soft); }
+
+/* بحث الهيدر */
+.site-search{
+  position: relative;
+  max-width: 340px;
+  width: 100%;
 }
+
+.site-search input{
+  width: 100%;
+  padding: 10px 12px;
+  border-radius: 12px;
+  border: 1px solid #ddd;
+  outline: none;
+  font-size: 14px;
+}
+
+.site-search input:focus{
+  border-color: var(--gold);
+  box-shadow: 0 0 0 3px rgba(212,175,55,.18);
+}
+
+.search-results{
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  left: 0;
+  background: #fff;
+  border: 1px solid #eee;
+  border-radius: 12px;
+  overflow: hidden;
+  display: none;
+  box-shadow: 0 10px 20px rgba(0,0,0,.08);
+  z-index: 999;
+}
+
+.result-item{
+  width: 100%;
+  text-align: right;
+  padding: 10px 12px;
+  background: transparent;
+  border: 0;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.result-item:hover{ background: #f7f7f7; }
 
 /* الهيرو */
 .hero {
@@ -111,19 +150,11 @@ a {
   white-space: nowrap;
 }
 
+.hero-text span { color: var(--gold-soft); }
 
-.hero-text span {
-  color: var(--gold-soft);
-}
+.hero-points { list-style: none; padding: 0; }
 
-.hero-points {
-  list-style: none;
-  padding: 0;
-}
-
-.hero-points li {
-  margin-bottom: 6px;
-}
+.hero-points li { margin-bottom: 6px; }
 
 .btn-primary {
   display: inline-block;
@@ -135,9 +166,7 @@ a {
   font-weight: bold;
 }
 
-.btn-primary:hover {
-  filter: brightness(1.1);
-}
+.btn-primary:hover { filter: brightness(1.1); }
 
 /* بطاقة الخدمات */
 .hero-card {
@@ -148,22 +177,39 @@ a {
   border-top: 6px solid var(--gold);
 }
 
-.hero-card h3 {
-  margin-top: 0;
-}
+.hero-card h3 { margin-top: 0; }
 
 /* الأقسام */
-.section {
-  padding: 50px 0;
-}
+.section { padding: 50px 0; }
 
-.section-alt {
-  background: #eef2f7;
-}
+.section-alt { background: #eef2f7; }
 
 .section-title {
   text-align: center;
   margin-bottom: 30px;
+  color: var(--blue);
+}
+
+/* قسم تصريح زواج */
+.service-focus{
+  padding: 18px;
+  margin: 18px 0 22px;
+  border: 1px solid #eee;
+  border-radius: var(--radius);
+  background: #fff;
+  border-right: 6px solid var(--gold);
+}
+
+.service-focus h3{
+  margin-top: 0;
+  color: var(--blue);
+}
+
+.link-inline{
+  display: inline-block;
+  margin-top: 10px;
+  text-decoration: underline;
+  font-weight: 600;
   color: var(--blue);
 }
 
@@ -242,9 +288,7 @@ details {
   z-index: 1000;
 }
 
-.whatsapp-float img {
-  width: 32px;
-}
+.whatsapp-float img { width: 32px; }
 
 /* تجاوب */
 @media (max-width: 900px) {
@@ -254,6 +298,8 @@ details {
   .why-grid {
     grid-template-columns: 1fr;
   }
+
+  .nav { display: none; }
 }
 
 /* تصغير العنوان على الجوال فقط */
@@ -264,42 +310,3 @@ details {
   }
 }
 
-  .nav {
-    display: none;
-  }
-}
-//* تنسيق الصناديق في الفوتر - نسخة الحل النهائي */
-.footer-services .service-column details {
-    background-color: #0d1b2a !important; /* خلفية كحلي داكن جداً */
-    border: 2px solid #d4af37 !important; /* إطار ذهبي واضح */
-    border-radius: 12px !important;
-    margin-bottom: 15px !important;
-    padding: 15px !important;
-    display: block !important;
-    overflow: visible !important;
-}
-
-/* تلوين العنوان (الذي يظهر عند التحديد فقط) */
-.footer-services .service-column summary {
-    color: #ffffff !important; 
-    -webkit-text-fill-color: #ffffff !important; /* إجبار تلوين النص للمتصفحات */
-    font-size: 18px !important; /* تكبير الخط للتأكد من رؤيته */
-    font-weight: bold !important;
-    text-align: right !important;
-    cursor: pointer !important;
-    display: block !important;
-    min-height: 20px !important;
-    opacity: 1 !important;
-    visibility: visible !important;
-}
-
-/* تلوين الوصف */
-.footer-services .service-column p {
-    color: #f2d98d !important;
-    -webkit-text-fill-color: #f2d98d !important;
-    margin-top: 12px !important;
-    font-size: 15px !important;
-    border-top: 1px solid rgba(255,255,255,0.2) !important;
-    padding-top: 10px !important;
-    display: block !important;
-}

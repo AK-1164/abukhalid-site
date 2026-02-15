@@ -1,28 +1,59 @@
 <!doctype html>
 <html lang="ar" dir="rtl">
 <head>
-  <link rel="icon" href="/favicon.ico">
-    
   <meta charset="utf-8" />
-  <title>أبو خالد للخدمات الإلكترونية | تصاريح زواج ومعاملات حكومية</title>
+  <title>أبو خالد للخدمات الإلكترونية | تصريح زواج - تصاريح زواج ومعاملات حكومية</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
 
-  <meta name="description" content="أبو خالد للخدمات الإلكترونية – إنجاز تصاريح الزواج، معاملات التجنيس، وتخليص المعاملات الحكومية إلكترونيًا في جميع مناطق المملكة العربية السعودية." />
-  <meta name="keywords" content="
-    تصاريح زواج,
-    معاملات حكومية,
-    ابوخالد للخدمات الكترونية,
-    بوابة ناجز,
-    تخليص معاملات,
-    انجاز معاملات,
-    انجاز تصاريح,
-    تصريح زواج,
-    خدمات الكترونيه سعوديه ,
-    خدمات السعودية,
-    ">
+  <meta name="description" content="أبو خالد للخدمات الإلكترونية – تصريح زواج وتصاريح زواج (سعودي من أجنبية / سعودية من أجنبي) داخل أو خارج المملكة، ومعاملات التجنيس وتخليص المعاملات الحكومية إلكترونيًا في جميع مناطق السعودية." />
 
-  <meta name="author" content="ابو خالد">
+  <!-- رابطك الحقيقي -->
+  <link rel="canonical" href="https://ak-1164.github.io/abukhalid-site/" />
+  
+  <link rel="icon" href="favicon.ico" type="image/x-icon">
+  <link rel="shortcut icon" href="favicon.ico" type="image/x-icon">
+
+  <!-- Open Graph -->
+  <meta property="og:title" content="أبو خالد للخدمات الإلكترونية | تصريح زواج - تصاريح زواج" />
+  <meta property="og:description" content="تصريح زواج وتصاريح زواج ومعاملات حكومية إلكترونيًا في جميع مناطق السعودية." />
+  <meta property="og:type" content="website" />
+  <meta property="og:locale" content="ar_SA" />
+  <meta property="og:url" content="https://ak-1164.github.io/abukhalid-site/" />
+
   <link rel="stylesheet" href="style.css" />
+
+  <!-- Structured Data: LocalBusiness -->
+  <script type="application/ld+json">
+  {
+    "@context":"https://schema.org",
+    "@type":"LocalBusiness",
+    "name":"أبو خالد للخدمات الإلكترونية",
+    "telephone":"+966501728829",
+    "areaServed":"SA",
+    "address":{"@type":"PostalAddress","addressLocality":"الرياض","addressCountry":"SA"},
+    "url":"https://ak-1164.github.io/abukhalid-site/"
+  }
+  </script>
+
+  <!-- Structured Data: FAQ -->
+  <script type="application/ld+json">
+  {
+    "@context":"https://schema.org",
+    "@type":"FAQPage",
+    "mainEntity":[
+      {
+        "@type":"Question",
+        "name":"كيف أقدم على تصريح زواج؟",
+        "acceptedAnswer":{"@type":"Answer","text":"تواصل معنا عبر واتساب لتحديد نوع تصريح الزواج (سعودي من أجنبية أو سعودية من أجنبي) ثم نساعدك في تجهيز المتطلبات وتقديم الطلب ومتابعته حتى استكمال المتطلبات."}
+      },
+      {
+        "@type":"Question",
+        "name":"هل تقدمون خدمة تصاريح زواج داخل وخارج المملكة؟",
+        "acceptedAnswer":{"@type":"Answer","text":"نعم، نقدم خدمة تصريح زواج وتصاريح زواج داخل المملكة وخارجها إلكترونيًا لجميع مناطق السعودية حسب الأنظمة المعتمدة."}
+      }
+    ]
+  }
+  </script>
 </head>
 <body>
 
@@ -38,17 +69,23 @@
     <div class="brand">
       <img src="logo.png" alt="شعار أبو خالد للخدمات الإلكترونية" class="logo">
       <div class="brand-text">
-        <h1>أبو خالد للخدمات الإلكترونيه</h1>
-        <p>تخليص معاملات</p>
+        <h1>أبو خالد</h1>
+        <p>للخدمات الإلكترونية</p>
       </div>
     </div>
 
-    <nav class="nav">
+    <nav class="nav" aria-label="التنقل الرئيسي">
       <a href="#services">الخدمات</a>
       <a href="#how">آلية العمل</a>
       <a href="#why">لماذا نحن</a>
       <a href="#faq">الأسئلة الشائعة</a>
     </nav>
+
+    <!-- بحث مرن -->
+    <div class="site-search" role="search" aria-label="بحث الخدمات">
+      <input id="serviceSearch" type="search" placeholder="ابحث: تصريح زواج، تصاريح زواج، تجنيس..." autocomplete="off" />
+      <div id="searchResults" class="search-results" aria-live="polite"></div>
+    </div>
   </div>
 </header>
 
@@ -57,16 +94,19 @@
   <div class="container hero-grid">
     <div class="hero-text">
       <h2>تصاريح زواج ومعاملات حكومية<br><span>إنجاز إلكتروني وأنت في مكانك</span></h2>
+
       <p>
         نقدم خدمات احترافية في استخراج موافقات الزواج، معاملات التجنيس،
         وتخليص المعاملات لدى الجهات الحكومية في جميع مناطق المملكة العربية السعودية.
       </p>
+
       <ul class="hero-points">
         <li>✔ فريق متخصص وخبرة في التعامل مع الجهات الرسمية</li>
         <li>✔ متابعة دقيقة حتى استكمال المتطلبات</li>
         <li>✔ سرية تامة للمعلومات</li>
       </ul>
-      <a href="https://wa.me/966501728829?text=السلام%20عليكم،%20أرغب%20بالحصول%20على%20خدمة%20وأود%20معرفة%20المتطلبات." 
+
+      <a href="https://wa.me/966501728829?text=السلام%20عليكم،%20أرغب%20بالحصول%20على%20خدمة%20وأود%20معرفة%20المتطلبات."
          class="btn-primary">
          تواصل عبر واتساب
       </a>
@@ -88,18 +128,48 @@
 <section id="services" class="section">
   <div class="container">
     <h2 class="section-title">الخدمات</h2>
+
+    <!-- قسم قوي: تصريح زواج -->
+    <section id="tasreeh-zawaj" class="service-focus">
+      <h3>تصريح زواج / تصاريح زواج</h3>
+      <p>
+        نقدم خدمة <strong>تصريح زواج</strong> و<strong>تصاريح زواج</strong> إلكترونيًا داخل المملكة العربية السعودية أو خارجها.
+        سواء كنت تحتاج <strong>موافقة زواج سعودي من أجنبية</strong> (داخل/خارج المملكة) أو <strong>موافقة زواج مواطنة سعودية من أجنبي</strong>،
+        نساعدك في معرفة الشروط، تجهيز المتطلبات، وتقديم الطلب ومتابعته حتى استكمال الإجراءات الرسمية.
+      </p>
+      <p>
+        كلمات البحث الشائعة التي نخدمها: <strong>تصريح زواج</strong>، <strong>تصاريح زواج</strong>، <strong>استخراج تصريح زواج</strong>،
+        <strong>طلب تصريح زواج</strong>، <strong>معاملة تصريح زواج</strong>، <strong>تصريح الزواج</strong>.
+      </p>
+
+      <a class="btn-primary"
+         href="https://wa.me/966501728829?text=السلام%20عليكم،%20أرغب%20في%20خدمة%20تصريح%20زواج%20وأود%20معرفة%20المتطلبات.">
+        تواصل بخصوص تصريح زواج
+      </a>
+    </section>
+
     <div class="cards">
       <div class="card">
         <h3>تصاريح الزواج</h3>
-        <p>استخراج موافقات الزواج للسعوديين والسعوديات من داخل المملكة أو خارجها، مع متابعة الطلب حتى استكمال جميع المتطلبات الرسمية.</p>
+        <p>
+          استخراج موافقات الزواج للسعوديين والسعوديات من داخل المملكة أو خارجها،
+          مع متابعة الطلب حتى استكمال جميع المتطلبات الرسمية.
+        </p>
+        <a href="#tasreeh-zawaj" class="link-inline">تفاصيل تصريح زواج</a>
       </div>
+
       <div class="card">
         <h3>معاملات التجنيس</h3>
-        <p>تجهيز وتقديم ومتابعة معاملات التجنيس وفق الأنظمة المعتمدة لدى الجهات المختصة.</p>
+        <p>
+          تجهيز وتقديم ومتابعة معاملات التجنيس وفق الأنظمة المعتمدة لدى الجهات المختصة.
+        </p>
       </div>
+
       <div class="card">
         <h3>تخليص المعاملات الحكومية</h3>
-        <p>إنهاء المعاملات لدى الوزارات والدوائر الحكومية بكل احترافية وسرية.</p>
+        <p>
+          إنهاء المعاملات لدى الوزارات والدوائر الحكومية بكل احترافية وسرية.
+        </p>
       </div>
     </div>
   </div>
@@ -109,10 +179,25 @@
 <section id="how" class="section section-alt">
   <div class="container">
     <h2 class="section-title">كيف ننجز معاملتك؟</h2>
+
     <div class="steps">
-      <div class="step"><span>1</span><h3>تواصل معنا</h3><p>عبر واتساب وتوضيح نوع الخدمة المطلوبة</p></div>
-      <div class="step"><span>2</span><h3>تجهيز المتطلبات</h3><p>نساعدك في تجهيز المستندات اللازمة بشكل صحيح</p></div>
-      <div class="step"><span>3</span><h3>التقديم والمتابعة</h3><p>نقوم بتقديم الطلب ومتابعته حتى استكمال المتطلبات</p></div>
+      <div class="step">
+        <span>1</span>
+        <h3>تواصل معنا</h3>
+        <p>عبر واتساب وتوضيح نوع الخدمة المطلوبة</p>
+      </div>
+
+      <div class="step">
+        <span>2</span>
+        <h3>تجهيز المتطلبات</h3>
+        <p>نساعدك في تجهيز المستندات اللازمة بشكل صحيح</p>
+      </div>
+
+      <div class="step">
+        <span>3</span>
+        <h3>التقديم والمتابعة</h3>
+        <p>نقوم بتقديم الطلب ومتابعته حتى استكمال المتطلبات</p>
+      </div>
     </div>
   </div>
 </section>
@@ -121,6 +206,7 @@
 <section id="why" class="section">
   <div class="container">
     <h2 class="section-title">لماذا أبو خالد؟</h2>
+
     <div class="why-grid">
       <div>✔ خبرة في التعامل مع الجهات الحكومية</div>
       <div>✔ إنجاز إلكتروني بدون تعقيد</div>
@@ -135,9 +221,21 @@
 <section id="faq" class="section section-alt">
   <div class="container">
     <h2 class="section-title">الأسئلة الشائعة</h2>
-    <details><summary>هل الخدمة متوفرة في جميع مناطق المملكة؟</summary><p>نعم، نقدم خدماتنا لجميع مناطق المملكة العربية السعودية إلكترونيًا.</p></details>
-    <details><summary>متى يتم الدفع؟</summary><p>يتم الدفع بعد استكمال المتطلبات المتفق عليها وبدء إجراءات التقديم الرسمية.</p></details>
-    <details><summary>هل تضمنون الموافقة؟</summary><p>القبول والرفض يعود للجهات الرسمية المختصة، ودورنا هو تجهيز الطلب ومتابعته وفق الأنظمة المعتمدة.</p></details>
+
+    <details>
+      <summary>هل الخدمة متوفرة في جميع مناطق المملكة؟</summary>
+      <p>نعم، نقدم خدماتنا لجميع مناطق المملكة العربية السعودية إلكترونيًا.</p>
+    </details>
+
+    <details>
+      <summary>متى يتم الدفع؟</summary>
+      <p>يتم الدفع بعد استكمال المتطلبات المتفق عليها وبدء إجراءات التقديم الرسمية.</p>
+    </details>
+
+    <details>
+      <summary>هل تضمنون الموافقة؟</summary>
+      <p>القبول والرفض يعود للجهات الرسمية المختصة، ودورنا هو تجهيز الطلب ومتابعته وفق الأنظمة المعتمدة.</p>
+    </details>
   </div>
 </section>
 
@@ -145,39 +243,85 @@
 <footer class="footer">
   <div class="container footer-inner">
     <p>© <span id="year"></span> أبو خالد للخدمات الإلكترونية — الرياض، المملكة العربية السعودية</p>
-
-    <!-- الخدمات المصغرة تحت الفوتر -->
-    <div class="footer-services">
-      <h2>خدماتنا</h2>
-      <div class="services-grid">
-        <div class="service-column">
-          <details><summary><h3>تصاريح زواج سعودي من أجنبية</h3></summary><p>إنهاء جميع الإجراءات الرسمية بسرعة.</p></details>
-          <details><summary><h3>تصاريح زواج أجنبي من سعودي</h3></summary><p>متابعة الطلب وفق الأنظمة المعتمدة.</p></details>
-          <details><summary><h3>كل أنواع تصاريح الزواج</h3></summary><p>تصاريح لجميع الحالات داخل وخارج المملكة.</p></details>
-          <details><summary><h3>إنجاز التصاريح إلكترونيًا</h3></summary><p>متابعة سريعة لجميع طلبات التصاريح.</p></details>
-          <details><summary><h3>خدمات إضافية في الزواج</h3></summary><p>توفير استشارات سريعة وإجراءات متقدمة.</p></details>
-          <details><summary><h3>متابعة المعاملات الزوجية</h3></summary><p>التأكد من استكمال جميع المستندات.</p></details>
-        </div>
-        <div class="service-column">
-          <details><summary>تخليص جميع المعاملات الحكومية</summary><p>متابعة جميع الإجراءات الرسمية بدقة وسرعة.</p></details>
-          <details><summary>معاملات التجنيس</summary><p>تقديم ومتابعة معاملات التجنيس إلكترونيًا.</p></details>
-          <details><summary>تخليص معاملات الوزارات</summary><p>إنهاء المعاملات بسرعة واحترافية.</p></details>
-          <details><summary>متابعة الطلبات الحكومية</summary><p>نضمن لك استكمال جميع المتطلبات.</p></details>
-          <details><summary>خدمات إضافية حكومية</summary><p>إجراءات خاصة وتسريع المعاملات المعقدة.</p></details>
-          <details><summary>إنجاز معاملات متنوعة</summary><p>تسهيل إنجاز جميع الإجراءات بسرعة.</p></details>
-        </div>
-      </div>
-    </div>
   </div>
 </footer>
 
 <!-- زر واتساب ثابت -->
-<a class="whatsapp-float" href="https://wa.me/966501728829" target="_blank" aria-label="تواصل واتساب">
+<a class="whatsapp-float"
+   href="https://wa.me/966501728829?text=السلام%20عليكم،%20أرغب%20بالحصول%20على%20خدمة%20وأود%20معرفة%20المتطلبات."
+   target="_blank"
+   aria-label="تواصل واتساب">
   <img src="https://upload.wikimedia.org/wikipedia/commons/6/6b/WhatsApp.svg" alt="واتساب">
 </a>
 
 <script>
+  // السنة
   document.getElementById("year").textContent = new Date().getFullYear();
+
+  // بحث الخدمات (مرن)
+  const services = [
+    { title: "تصريح زواج", keywords: ["تصريح زواج","تصاريح زواج","تصريح الزواج","استخراج تصريح زواج","طلب تصريح زواج","معاملة تصريح زواج","موافقة زواج","موافقة زواج سعودي من اجنبية","موافقة زواج مواطنة من اجنبي"], target: "#tasreeh-zawaj" },
+    { title: "معاملات التجنيس", keywords: ["تجنيس","معاملات التجنيس","تقديم تجنيس","طلب تجنيس"], target: "#services" },
+    { title: "تخليص المعاملات الحكومية", keywords: ["تخليص معاملات","معاملات حكومية","الوزارات","دوائر حكومية"], target: "#services" },
+    { title: "الأسئلة الشائعة", keywords: ["اسئلة","الأسئلة الشائعة","faq"], target: "#faq" },
+    { title: "آلية العمل", keywords: ["كيف","آلية","طريقة","الخطوات"], target: "#how" }
+  ];
+
+  const input = document.getElementById("serviceSearch");
+  const resultsBox = document.getElementById("searchResults");
+
+  function normalize(str){
+    return (str || "")
+      .toLowerCase()
+      .replace(/[إأآا]/g,"ا")
+      .replace(/ة/g,"ه")
+      .replace(/ى/g,"ي")
+      .replace(/\s+/g," ")
+      .trim();
+  }
+
+  function renderResults(items){
+    if (!items.length){
+      resultsBox.innerHTML = "";
+      resultsBox.style.display = "none";
+      return;
+    }
+    resultsBox.style.display = "block";
+    resultsBox.innerHTML = items.slice(0,6).map(item => (
+      `<button type="button" class="result-item" data-target="${item.target}">${item.title}</button>`
+    )).join("");
+  }
+
+  input.addEventListener("input", () => {
+    const q = normalize(input.value);
+    if (!q) return renderResults([]);
+
+    const matches = services.filter(s => {
+      const hay = normalize([s.title, ...s.keywords].join(" "));
+      return hay.includes(q);
+    });
+
+    renderResults(matches);
+  });
+
+  resultsBox.addEventListener("click", (e) => {
+    const btn = e.target.closest(".result-item");
+    if (!btn) return;
+    const target = btn.getAttribute("data-target");
+    if (target && target.startsWith("#")){
+      const el = document.querySelector(target);
+      if (el) el.scrollIntoView({behavior:"smooth", block:"start"});
+    }
+    resultsBox.innerHTML = "";
+    resultsBox.style.display = "none";
+  });
+
+  document.addEventListener("click", (e) => {
+    if (!resultsBox.contains(e.target) && e.target !== input){
+      resultsBox.innerHTML = "";
+      resultsBox.style.display = "none";
+    }
+  });
 </script>
 
 </body>
