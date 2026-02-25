@@ -1,0 +1,166 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>أبو خالد للخدمات الإلكترونية | تواصل معنا</title>
+  <meta name="description" content="تواصل مع مكتب أبو خالد للإنجاز الإلكتروني عبر واتساب — الرياض ونخدم جميع مناطق المملكة." />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+  <div class="offerbar">
+    <div class="container offerwrap">
+      <div class="hint">استشارة مجانية عبر واتساب</div>
+      <div>—</div>
+      <div>خصم <span class="deal">25%</span> على جميع الخدمات لفترة محدودة</div>
+    </div>
+  </div>
+
+  <div class="drawerBackdrop" id="drawerBackdrop" aria-hidden="true"></div>
+  <nav class="drawer" id="drawer" aria-label="القائمة">
+    <div class="drawerHeader">
+      <div class="brand">
+        <div class="logo">
+  <img src="logo.png" alt="شعار أبو خالد">
+</div>
+        <div class="brandText">
+          <b>أبو خالد</b>
+          <small>للخدمات الإلكترونية</small>
+        </div>
+      </div>
+      <button class="btn ghost" id="closeDrawer" type="button">إغلاق</button>
+    </div>
+
+    <a href="index.html" onclick="closeMenu()">الرئيسية <small>الواجهة الرئيسية + FAQ</small></a>
+    <a href="services.html" onclick="closeMenu()">خدماتنا <small>تصاريح • تجنيس • معاملات</small></a>
+    <a href="process.html" onclick="closeMenu()">كيف ننجز معاملتك؟ <small>3 خطوات واضحة</small></a>
+    <a href="contact.html" onclick="closeMenu()">تواصل معنا <small>واتساب + نموذج</small></a>
+  </nav>
+
+  <header>
+    <div class="container topbar">
+      <button class="burger" id="openDrawer" type="button" aria-label="فتح القائمة"><span></span></button>
+
+      <div class="brand" style="justify-content:center; text-align:center; flex:1">
+        <div class="logo">
+  <img src="logo.png" alt="شعار أبو خالد">
+</div>
+        <div class="brandText">
+          <b>أبو خالد للخدمات الإلكترونية</b>
+          <small>تواصل معنا</small>
+        </div>
+      </div>
+
+      
+    </div>
+  </header>
+
+  <main class="hero">
+    <div class="container">
+
+      <div class="sectionHead">
+        <div>
+          <h1 class="h2">تواصل معنا</h1>
+          <div class="muted">موقعنا الرياض ونخدم جميع مناطق المملكة العربية السعودية إلكترونيًا.</div>
+        </div>
+        <a class="btn primary" id="waContact" href="#" target="_blank" rel="noopener">تواصل عبر واتساب</a>
+      </div>
+
+      <div class="grid contactGrid">
+        <div class="card pad">
+          <div class="h3">بيانات المكتب</div>
+          <div class="mini" style="margin-top:10px"><b>الاسم:</b> <span class="muted">أبو خالد للخدمات الإلكترونية</span></div>
+          <div class="mini" style="margin-top:10px"><b>الموقع:</b> <span class="muted">الرياض — المملكة العربية السعودية</span></div>
+          <div class="mini" style="margin-top:10px"><b>نطاق الخدمة:</b> <span class="muted">جميع مناطق المملكة (إلكترونيًا)</span></div>
+          <div class="mini" style="margin-top:10px"><b>التواصل:</b> <span class="muted">واتساب على مدار 24 ساعة</span></div>
+
+          <div class="mini" style="margin-top:12px">
+            <b>تنويه:</b>
+            <div class="muted">لسنا جهة حكومية — القبول/الرفض يعود للجهات الرسمية المختصة.</div>
+          </div>
+        </div>
+
+        <div class="card pad">
+          <div class="h3">نموذج طلب خدمة (يرسل للواتساب)</div>
+          <div class="muted">املأ البيانات واضغط “إرسال واتساب” — رسالة مرتبة تلقائيًا.</div>
+
+          <form id="serviceForm">
+            <div class="formRow">
+              <div>
+                <label for="name">الاسم</label>
+                <input id="name" type="text" placeholder="مثال: محمد" required />
+              </div>
+              <div>
+                <label for="city">المدينة</label>
+                <input id="city" type="text" placeholder="مثال: الرياض" required />
+              </div>
+            </div>
+
+            <div class="formRow">
+              <div>
+                <label for="service">نوع الخدمة</label>
+                <select id="service" required>
+                  <option value="" disabled selected>اختر الخدمة</option>
+                  <option>تصريح زواج (سعودي من أجنبية)</option>
+                  <option>تصريح زواج (سعودية من أجنبي)</option>
+                  <option>معاملة تجنيس</option>
+                  <option>تخليص معاملة حكومية / وزارية</option>
+                  <option>استشارة عامة</option>
+                </select>
+              </div>
+              <div>
+                <label for="where">داخل/خارج المملكة</label>
+                <select id="where" required>
+                  <option value="" disabled selected>اختر</option>
+                  <option>داخل المملكة</option>
+                  <option>خارج المملكة</option>
+                </select>
+              </div>
+            </div>
+
+            <label for="note">ملاحظات مختصرة</label>
+            <textarea id="note" placeholder="اكتب أي تفاصيل تساعدنا (اختياري)"></textarea>
+
+            <div style="display:flex; gap:10px; flex-wrap:wrap; margin-top:12px">
+              <button class="btn primary" type="submit">إرسال واتساب</button>
+              <button class="btn" type="button" id="fillExample">تعبئة مثال</button>
+            </div>
+
+            <div class="help">* الدفع بعد استكمال المتطلبات المتفق عليها وبدء إجراءات التقديم الرسمية.</div>
+          </form>
+
+          <div class="greenBox" style="margin-top:14px">
+            <h3 style="margin:0 0 8px">استشارة مجانية • طلب عرض سعر</h3>
+            <p style="margin:0 0 12px">خصم 25% لفترة محدودة — تواصل الآن</p>
+            <a class="btn" id="waQuote" href="#" target="_blank" rel="noopener">ابدأ واتساب الآن</a>
+            <div class="discount">خصم 25% على جميع الخدمات</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="footer" style="margin-top:16px">
+        <div class="container" style="display:flex; flex-wrap:wrap; gap:10px; align-items:center; justify-content:space-between">
+          <div>© <span id="year"></span> أبو خالد للخدمات الإلكترونية — جميع الحقوق محفوظة</div>
+          
+        </div>
+      </div>
+
+    </div>
+  </main>
+
+  <div class="floatStack" aria-label="زر واتساب">
+    <div class="waRow">
+      <div class="waHint">تواصل واتساب</div>
+      <a class="waBtn" id="waFloat" href="#" target="_blank" rel="noopener" title="واتساب">
+        <svg width="26" height="26" viewBox="0 0 32 32" fill="none" aria-hidden="true">
+          <path d="M16 3C9.4 3 4 8.1 4 14.4c0 2.4.8 4.8 2.3 6.8L5 29l8-1.3c2 .9 4 .9 3 .9 6.6 0 12-5.1 12-11.4S22.6 3 16 3Z" stroke="white" stroke-width="2" opacity=".9"/>
+          <path d="M12.7 10.7c-.3-.7-.5-.7-.8-.7h-.6c-.2 0-.6.1-.9.5-.3.4-1.1 1.1-1.1 2.7 0 1.6 1.1 3.2 1.3 3.4.2.2 2.2 3.3 5.5 4.5 2.7 1 3.2.8 3.8.7.6-.1 1.9-.8 2.2-1.6.3-.8.3-1.5.2-1.6-.1-.1-.3-.2-.7-.4s-1.9-.9-2.2-1c-.3-.1-.6-.2-.8 .2-.2.4-.9 1-.1 1.2-.1 .2-.3 .3-.6 .2-.3-.1-1.2-.4-2.3-1.3-.8-.7-1.4-1.5-1.6-1.8-.2-.3 0-.4.1-.6.1-.1.3-.3.4-.5.1-.2.2-.3.3-.5.1-.2 0-.4 0-.6 0-.2-.7-1.8-.9-2.4Z" fill="white" opacity=".95"/>
+        </svg>
+      </a>
+    </div>
+  </div>
+
+  <script src="main.js"></script>
+</body>
+</html>
