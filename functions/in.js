@@ -28,10 +28,7 @@ export async function onRequest(context) {
   // ====== From here: protection applies ONLY to real ad clicks ======
 
   // Block non-Saudi IPs (helps against VPN outside SA)
-  const country = (request.headers.get("CF-IPCountry") || "").toUpperCase();
-  if (country && country !== "SA") {
-    return new Response(null, { status: 403 });
-  }
+  
 
   // Strong identity: IP only
   const ip = request.headers.get("CF-Connecting-IP") || "";
