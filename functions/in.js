@@ -1,34 +1,39 @@
 export async function onRequest(context) {
   const { request, env } = context;
 
-  // ====== SETTINGS (edit here only) ======
-  const LANDING_URL = "https://abukhalid.pages.dev/"; // <-- your site
-  const MAX_ALLOWED = 2;      // <-- allow 2
-  const WINDOW_HOURS = 24;    // <-- count window
-  const BAN_HOURS = 168;      // <-- ban duration
+  // ====== SETTINGS (edit here if you want) ======
+  const LANDING_URL = "https://abukhalid.pages.dev/"; // your real site
+  const MAX_ALLOWED = 2;      // allow 2 ad entries
+  const WINDOW_HOURS = 24;    // counting window
+  const BAN_HOURS = 168;      // ban duration
 
-  const ua = request.headers.get("User-Agent") || "";
+  const url = new URL(request.url);
 
-  // ====== ALWAYS ALLOW GOOGLE (Ads review + crawlers) ======
-  const isGoogle =
-    ua.includes("Googlebot") ||
-    ua.includes("AdsBot-Google") ||
-    ua.includes("Mediapartners-Google") ||
-    ua.includes("Google-InspectionTool") ||
-    ua.includes("APIs-Google") ||
-    ua.includes("Google");
+  // Detect real ad clicks (Auto-tagging adds gclid)
+  const gclid = url.searchParams.get("gclid");
+  const utmSource = (url.searchParams.get("utm_source") || "").toLowerCase();
+  const utmMedium = (url.searchParams.get("utm_medium") || "").toLowerCase();
 
-  if (isGoogle) {
+  const isAdClick =
+    !!gclid ||
+    (utmSource === "google" && (utmMedium === "cpc" || utmMedium === "ppc" || utmMedium === "paidsearch"));
+
+  // IMPORTANT:
+  // If it's NOT an ad click (e.g., Google review tools, random visitors, previews),
+  // do NOT block. Just redirect to the site.
+  if (!isAdClick) {
     return Response.redirect(LANDING_URL, 302);
   }
 
-  // ====== BLOCK NON-SAUDI IPs ======
+  // ====== From here: protection applies ONLY to real ad clicks ======
+
+  // Block non-Saudi IPs (helps against VPN outside SA)
   const country = (request.headers.get("CF-IPCountry") || "").toUpperCase();
   if (country && country !== "SA") {
     return new Response(null, { status: 403 });
   }
 
-  // ====== STRONG ID: IP ONLY ======
+  // Strong identity: IP only
   const ip = request.headers.get("CF-Connecting-IP") || "";
   if (!ip) return new Response(null, { status: 403 });
 
@@ -38,7 +43,7 @@ export async function onRequest(context) {
   const banKey = `ban:${ip}`;
   const countKey = `cnt:${ip}`;
 
-  // if banned -> block silently
+  // If banned -> block silently
   const banned = await store.get(banKey);
   if (banned) return new Response(null, { status: 403 });
 
@@ -51,25 +56,23 @@ export async function onRequest(context) {
     try { data = JSON.parse(raw); } catch {}
   }
 
-  // reset after window
+  // Reset after window
   if (!data.t || (now - data.t) > windowSeconds) {
     data = { c: 0, t: now };
   }
 
   data.c += 1;
 
-  // third time -> ban + block silently
+  // Third time -> ban + block silently
   if (data.c > MAX_ALLOWED) {
     await store.put(banKey, "1", { expirationTtl: BAN_HOURS * 3600 });
     await store.delete(countKey);
     return new Response(null, { status: 403 });
   }
 
-  // save counter
   await store.put(countKey, JSON.stringify(data), {
     expirationTtl: windowSeconds
   });
 
-  // allow -> redirect to your site
   return Response.redirect(LANDING_URL, 302);
 }
