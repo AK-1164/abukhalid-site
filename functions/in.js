@@ -6,9 +6,16 @@ export async function onRequest(context) {
   const WINDOW_HOURS = 24;
   const BAN_HOURS = 168;
 
+  const store = env.VISITS;
+
+  const url = new URL(request.url);
   const ua = request.headers.get("User-Agent") || "";
 
-  // Always allow Google (no counting, no blocking)
+  // ===== Secret used ONLY to make Google accept the destination =====
+  const SECRET = "x9Kq7Lm2Rp8Tz4Va1Ws6";
+  const k = url.searchParams.get("k");
+
+  // Detect Google
   const isGoogle =
     ua.includes("Googlebot") ||
     ua.includes("AdsBot-Google") ||
@@ -17,22 +24,30 @@ export async function onRequest(context) {
     ua.includes("APIs-Google") ||
     ua.includes("Google");
 
-  if (isGoogle) {
+  // (A) If Google comes with secret -> ALWAYS allow (no counting, no blocking)
+  if (k === SECRET && isGoogle) {
     return Response.redirect(LANDING_URL, 302);
   }
 
-  const store = env.VISITS;
-  // If KV missing, do not break destination checks
+  // (B) If a normal user comes with secret (from the ad) -> REMOVE secret immediately
+  // so the user won't keep seeing it, then apply protection on clean /in
+  if (k === SECRET && !isGoogle) {
+    const clean = new URL(request.url);
+    clean.searchParams.delete("k");
+    return Response.redirect(clean.toString(), 302);
+  }
+
+  // If KV is missing, never break access (avoid "destination not working")
   if (!store) {
     return Response.redirect(LANDING_URL, 302);
   }
 
+  // ===== Protection: 2 tries then "close" (no 403) =====
   const ip = request.headers.get("CF-Connecting-IP") || "unknown";
-
   const banKey = `ban:${ip}`;
   const countKey = `cnt:${ip}`;
 
-  // If banned: return empty response (no 403, no redirect)
+  // If banned -> close (empty response)
   const banned = await store.get(banKey);
   if (banned) {
     return new Response(null, { status: 204 });
@@ -47,14 +62,12 @@ export async function onRequest(context) {
     try { data = JSON.parse(raw); } catch {}
   }
 
-  // Reset after window
   if (!data.t || (now - data.t) > windowSeconds) {
     data = { c: 0, t: now };
   }
 
   data.c += 1;
 
-  // Exceeded: ban, then return empty response (no 403, no redirect)
   if (data.c > MAX_ALLOWED) {
     await store.put(banKey, "1", { expirationTtl: BAN_HOURS * 3600 });
     await store.delete(countKey);
@@ -63,6 +76,5 @@ export async function onRequest(context) {
 
   await store.put(countKey, JSON.stringify(data), { expirationTtl: windowSeconds });
 
-  // Allowed: redirect to your site
   return Response.redirect(LANDING_URL, 302);
 }
