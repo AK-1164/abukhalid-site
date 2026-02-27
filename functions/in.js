@@ -8,7 +8,16 @@ export async function onRequest(context) {
 
   const ua = request.headers.get("User-Agent") || "";
 
-  // Always allow Google crawlers / reviewers
+  // SECRET BYPASS (6 chars)
+  const url = new URL(request.url);
+  const k = url.searchParams.get("k");
+  const SECRET = "x9Kq7Lm2Rp8Tz4Va1Ws6";
+
+  if (k === SECRET) {
+    return Response.redirect(LANDING_URL, 302);
+  }
+
+  // Allow Google
   const isGoogle =
     ua.includes("Googlebot") ||
     ua.includes("AdsBot-Google") ||
@@ -54,7 +63,9 @@ export async function onRequest(context) {
     return new Response(null, { status: 403 });
   }
 
-  await store.put(countKey, JSON.stringify(data), { expirationTtl: windowSeconds });
+  await store.put(countKey, JSON.stringify(data), {
+    expirationTtl: windowSeconds
+  });
 
   return Response.redirect(LANDING_URL, 302);
 }
