@@ -2,57 +2,51 @@ export async function onRequest(context) {
   const { request, env } = context;
 
   const LANDING_URL = "https://abukhalid.pages.dev/";
-  const MAX_ALLOWED = 2;
-  const WINDOW_HOURS = 24;
-  const BAN_HOURS = 168;
+  const MAX_ALLOWED = 2;      // مرتين فقط
+  const WINDOW_HOURS = 24;    // خلال اليوم
+  const BAN_HOURS = 168;      // حظر أسبوع
 
   const store = env.VISITS;
-
   const url = new URL(request.url);
-  const ua = request.headers.get("User-Agent") || "";
 
-  // ===== Secret used ONLY to make Google accept the destination =====
-  const SECRET = "x9Kq7Lm2Rp8Tz4Va1Ws6";
-  const k = url.searchParams.get("k");
+  // (1) تنظيف k للجميع (تبقي رابط Ads كما هو)
+  if (url.searchParams.has("k")) {
+    url.searchParams.delete("k");
+    return Response.redirect(url.toString(), 302);
+  }
 
-  // Detect Google
-  const isGoogle =
-    ua.includes("Googlebot") ||
-    ua.includes("AdsBot-Google") ||
-    ua.includes("Mediapartners-Google") ||
-    ua.includes("Google-InspectionTool") ||
-    ua.includes("APIs-Google") ||
-    ua.includes("Google");
+  // (2) لا تكسر الوجهة إذا KV غير موجود
+  if (!store) return Response.redirect(LANDING_URL, 302);
 
-  // (A) If Google comes with secret -> ALWAYS allow (no counting, no blocking)
-  if (k === SECRET && isGoogle) {
+  // (اختياري) تقييد الحماية على السعودية فقط
+  // إذا تريدها على كل الدول: احذف هذا الشرط بالكامل
+  const country = request.headers.get("CF-IPCountry") || "XX";
+  if (country !== "SA") {
     return Response.redirect(LANDING_URL, 302);
   }
 
-  // (B) If a normal user comes with secret (from the ad) -> REMOVE secret immediately
-  // so the user won't keep seeing it, then apply protection on clean /in
-  if (k === SECRET && !isGoogle) {
-    const clean = new URL(request.url);
-    clean.searchParams.delete("k");
-    return Response.redirect(clean.toString(), 302);
-  }
-
-  // If KV is missing, never break access (avoid "destination not working")
-  if (!store) {
-    return Response.redirect(LANDING_URL, 302);
-  }
-
-  // ===== Protection: 2 tries then "close" (no 403) =====
   const ip = request.headers.get("CF-Connecting-IP") || "unknown";
-  const banKey = `ban:${ip}`;
-  const countKey = `cnt:${ip}`;
+  const banKey = `ban:${country}:${ip}`;
+  const countKey = `cnt:${country}:${ip}`;
 
-  // If banned -> close (empty response)
+  // (3) إذا محظور أسبوع -> صفحة 200 ثابتة (بدون 204)
   const banned = await store.get(banKey);
   if (banned) {
-    return new Response(null, { status: 204 });
+    return new Response(`<!doctype html>
+<html lang="ar"><head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>تم تقييد الزيارة</title>
+</head><body style="font-family:system-ui;padding:24px">
+<h2>تم تقييد الزيارة</h2>
+<p>تم استلام زيارتك.</p>
+</body></html>`, {
+      status: 200,
+      headers: { "Content-Type": "text/html; charset=utf-8" },
+    });
   }
 
+  // (4) عدّ خلال 24 ساعة
   const now = Math.floor(Date.now() / 1000);
   const windowSeconds = WINDOW_HOURS * 3600;
 
@@ -62,19 +56,35 @@ export async function onRequest(context) {
     try { data = JSON.parse(raw); } catch {}
   }
 
+  // إعادة ضبط العداد بعد 24 ساعة
   if (!data.t || (now - data.t) > windowSeconds) {
     data = { c: 0, t: now };
   }
 
   data.c += 1;
 
+  // (5) إذا تعدّى مرتين -> حظر أسبوع + صفحة 200
   if (data.c > MAX_ALLOWED) {
     await store.put(banKey, "1", { expirationTtl: BAN_HOURS * 3600 });
     await store.delete(countKey);
-    return new Response(null, { status: 204 });
+
+    return new Response(`<!doctype html>
+<html lang="ar"><head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>تم تقييد الزيارة</title>
+</head><body style="font-family:system-ui;padding:24px">
+
+<p>تم استلام زيارتك.</p>
+</body></html>`, {
+      status: 200,
+      headers: { "Content-Type": "text/html; charset=utf-8" },
+    });
   }
 
+  // خزّن العداد بمدة 24 ساعة
   await store.put(countKey, JSON.stringify(data), { expirationTtl: windowSeconds });
 
+  // (6) أول مرتين: تحويل للموقع
   return Response.redirect(LANDING_URL, 302);
 }
