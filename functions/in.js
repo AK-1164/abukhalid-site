@@ -8,6 +8,25 @@ export async function onRequest(context) {
 
   const store = env.VISITS;
   const url = new URL(request.url);
+  // منع اليمن فقط
+const country = request.headers.get("CF-IPCountry") || "XX";
+if (country === "YE") {
+  return new Response(`<!doctype html>
+<html lang="ar">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>غير متاح</title>
+</head>
+<body style="font-family:system-ui;padding:24px">
+<h2>غير متاح</h2>
+<p>الخدمة غير متاحة.</p>
+</body>
+</html>`, {
+    status: 403,
+    headers: { "Content-Type": "text/html; charset=utf-8" }
+  });
+}
 
   // (1) تنظيف k للجميع (تبقي رابط Ads كما هو)
   if (url.searchParams.has("k")) {
