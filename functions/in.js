@@ -6,11 +6,9 @@ export async function onRequest(context) {
   const WINDOW_HOURS = 24;
   const BAN_HOURS = 168;
 
-  // If KV is not configured, never break Google Ads checks
-  const store = env.VISITS;
-
-  // Always allow Google (and never block even if KV fails)
   const ua = request.headers.get("User-Agent") || "";
+
+  // Always allow Google (no counting, no blocking)
   const isGoogle =
     ua.includes("Googlebot") ||
     ua.includes("AdsBot-Google") ||
@@ -19,7 +17,13 @@ export async function onRequest(context) {
     ua.includes("APIs-Google") ||
     ua.includes("Google");
 
-  if (isGoogle || !store) {
+  if (isGoogle) {
+    return Response.redirect(LANDING_URL, 302);
+  }
+
+  const store = env.VISITS;
+  // If KV missing, do not break destination checks
+  if (!store) {
     return Response.redirect(LANDING_URL, 302);
   }
 
@@ -28,10 +32,10 @@ export async function onRequest(context) {
   const banKey = `ban:${ip}`;
   const countKey = `cnt:${ip}`;
 
-  // If banned: DO NOT return 403. Just redirect silently.
+  // If banned: return empty response (no 403, no redirect)
   const banned = await store.get(banKey);
   if (banned) {
-    return Response.redirect(LANDING_URL, 302);
+    return new Response(null, { status: 204 });
   }
 
   const now = Math.floor(Date.now() / 1000);
@@ -43,20 +47,22 @@ export async function onRequest(context) {
     try { data = JSON.parse(raw); } catch {}
   }
 
+  // Reset after window
   if (!data.t || (now - data.t) > windowSeconds) {
     data = { c: 0, t: now };
   }
 
   data.c += 1;
 
-  // If exceeded: set ban, but still redirect (no 403).
+  // Exceeded: ban, then return empty response (no 403, no redirect)
   if (data.c > MAX_ALLOWED) {
     await store.put(banKey, "1", { expirationTtl: BAN_HOURS * 3600 });
     await store.delete(countKey);
-    return Response.redirect(LANDING_URL, 302);
+    return new Response(null, { status: 204 });
   }
 
   await store.put(countKey, JSON.stringify(data), { expirationTtl: windowSeconds });
 
+  // Allowed: redirect to your site
   return Response.redirect(LANDING_URL, 302);
 }
