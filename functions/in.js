@@ -6,18 +6,14 @@ export async function onRequest(context) {
   const WINDOW_HOURS = 24;
   const BAN_HOURS = 168;
 
+  const url = new URL(request.url);
   const ua = request.headers.get("User-Agent") || "";
 
-  // SECRET BYPASS (6 chars)
-  const url = new URL(request.url);
-  const k = url.searchParams.get("k");
+  // ---- Secret (20 chars) ----
   const SECRET = "x9Kq7Lm2Rp8Tz4Va1Ws6";
+  const k = url.searchParams.get("k");
 
-  if (k === SECRET) {
-    return Response.redirect(LANDING_URL, 302);
-  }
-
-  // Allow Google
+  // Detect Google
   const isGoogle =
     ua.includes("Googlebot") ||
     ua.includes("AdsBot-Google") ||
@@ -26,10 +22,20 @@ export async function onRequest(context) {
     ua.includes("APIs-Google") ||
     ua.includes("Google");
 
-  if (isGoogle) {
+  // 1) If Google comes with the secret -> allow (no blocking, no counting)
+  if (k === SECRET && isGoogle) {
     return Response.redirect(LANDING_URL, 302);
   }
 
+  // 2) If a normal user comes with the secret,
+  //    REMOVE the secret immediately
+  if (k === SECRET && !isGoogle) {
+    const clean = new URL(request.url);
+    clean.searchParams.delete("k");
+    return Response.redirect(clean.toString(), 302);
+  }
+
+  // ---- Protection: IP only ----
   const ip = request.headers.get("CF-Connecting-IP") || "";
   if (!ip) return new Response(null, { status: 403 });
 
@@ -63,9 +69,7 @@ export async function onRequest(context) {
     return new Response(null, { status: 403 });
   }
 
-  await store.put(countKey, JSON.stringify(data), {
-    expirationTtl: windowSeconds
-  });
+  await store.put(countKey, JSON.stringify(data), { expirationTtl: windowSeconds });
 
   return Response.redirect(LANDING_URL, 302);
 }
