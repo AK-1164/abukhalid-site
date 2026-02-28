@@ -17,6 +17,36 @@ function waLink(msg){
   return `https://wa.me/${WHATSAPP_NUMBER}?text=${msg || defaultMsg}`;
 }
 
+// ==========================
+// Google Ads conversion tracking (WhatsApp)
+// ==========================
+// ✅ استبدل REPLACE_WITH_LABEL بالـ label الذي سيظهر لك في Event snippet داخل Google Ads
+// مثال: "AW-17529333980/AbCdEfGhIjKlMnOpQr"
+const ADS_SEND_TO = "AW-17529333980/oLGfCJD_poAcENzR0aZB";
+
+function trackWhatsAppConversion(){
+  try {
+    if (typeof gtag === "function" && ADS_SEND_TO.includes("/")) {
+      gtag("event", "conversion", { send_to: ADS_SEND_TO });
+    }
+  } catch (e) {}
+}
+
+// ربط تتبع التحويل على كل أزرار الواتساب الموجودة في الصفحة
+function bindWhatsAppTracking(){
+  const ids = ["waHero","waOffer","waServices","waContact","waQuote","waFloat"];
+  ids.forEach(id=>{
+    const el = document.getElementById(id);
+    if(!el) return;
+    el.addEventListener("click", () => {
+      trackWhatsAppConversion();
+    });
+  });
+}
+
+// ==========================
+// Bind WhatsApp buttons
+// ==========================
 // ربط كل أزرار الواتساب الموجودة في الصفحة
 function bindWhatsAppButtons(){
   const ids = ["waHero","waOffer","waServices","waContact","waQuote","waFloat"];
@@ -87,6 +117,10 @@ function setupContactForm(){
       alert("فضلاً عبّئ الاسم والمدينة ونوع الخدمة وداخل/خارج المملكة.");
       return;
     }
+
+    // ✅ سجل تحويل واتساب عند إرسال النموذج أيضاً
+    trackWhatsAppConversion();
+
     window.open(waLink(buildMsg()), "_blank", "noopener");
   });
 
@@ -109,8 +143,8 @@ function setYear(){
 
 document.addEventListener("DOMContentLoaded", ()=>{
   bindWhatsAppButtons();
+  bindWhatsAppTracking(); // ✅ جديد
   setupDrawer();
   setupContactForm();
   setYear();
 });
-
