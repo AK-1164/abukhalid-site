@@ -395,3 +395,8 @@ label{display:block; margin:10px 0 6px; font-weight:900; color:#fff}
   display:block;
   border-bottom:1px solid rgba(255,255,255,.10);
 }
+
+.pill {
+  display: flex;
+  flex-direction: column;
+}
