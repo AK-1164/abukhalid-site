@@ -128,7 +128,7 @@ function setupContactForm(){
     fillExample.addEventListener("click", ()=>{
       document.getElementById("name").value = "محمد";
       document.getElementById("city").value = "الرياض";
-      document.getElementById("service").value = "تصريح زواج (سعودي من أجنبية)";
+      document.getElementById("service").value = "انجاز اجراءات زواج (سعودي من أجنبية)";
       document.getElementById("where").value = "داخل المملكة";
       document.getElementById("note").value = "أحتاج معرفة المتطلبات وطريقة التقديم والمتابعة.";
     });
