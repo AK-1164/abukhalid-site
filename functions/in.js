@@ -15,19 +15,22 @@ export async function onRequest(context) {
   const now = Math.floor(Date.now() / 1000);
   const weekSeconds = BAN_HOURS * 3600;
 
-  // ===== وقت مقروء (توقيت السعودية UTC+3) =====
-  function pad(n){ return String(n).padStart(2, "0"); }
-  function ksaTsFromNowSec(nowSec){
-    // نحول الثواني إلى ميللي ثم نضيف +3 ساعات
-    const d = new Date((nowSec + 3 * 3600) * 1000);
-    const y = d.getUTCFullYear();
-    const m = pad(d.getUTCMonth() + 1);
-    const day = pad(d.getUTCDate());
-    const hh = pad(d.getUTCHours());
-    const mm = pad(d.getUTCMinutes());
-    const ss = pad(d.getUTCSeconds());
-    return `${y}-${m}-${day} ${hh}:${mm}:${ss} KSA`;
-  }
+  // ===== إضافة فقط: وقت مقروء (توقيت السعودية UTC+3) =====
+  function pad(n) { 
+  return String(n).padStart(2, "0"); 
+}
+
+function ksaTsFromNowSec(nowSec) {
+  const d = new Date((nowSec + 3 * 3600) * 1000);
+
+  const day = pad(d.getUTCDate());
+  const month = pad(d.getUTCMonth() + 1);
+  const hh = pad(d.getUTCHours());
+  const mm = pad(d.getUTCMinutes());
+  const ss = pad(d.getUTCSeconds());
+
+  return `${day}/${month} ${hh}:${mm}:${ss} KSA`;
+}
 
   // ==========================
   // 1) اليمن: حظر مباشر أسبوع + عداد
@@ -171,3 +174,4 @@ export async function onRequest(context) {
 
   return Response.redirect(LANDING_URL, 302);
 }
+
