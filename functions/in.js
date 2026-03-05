@@ -15,9 +15,9 @@ export async function onRequest(context) {
   const now = Math.floor(Date.now() / 1000);
   const weekSeconds = BAN_HOURS * 3600;
 
-  // ===== ترقيم عالمي يزيد فقط عند "حظر جديد" =====
+  // ===== ترقيم عالمي =====
   async function nextSeq() {
-    const key = "global:seq";
+    const key = "Global:seq"; // نفس اللي ظهر عندك
     let n = 0;
     const raw = await store.get(key);
     if (raw) {
@@ -25,12 +25,19 @@ export async function onRequest(context) {
       if (!Number.isNaN(parsed)) n = parsed;
     }
     n += 1;
-    await store.put(key, String(n)); // بدون TTL (يبقى محفوظ دائمًا)
+    await store.put(key, String(n)); // بدون TTL
     return n;
   }
 
+  // يضمن وجود seq داخل السجل (بدون تغيير c/t)
+  async function ensureSeq(data) {
+    if (data && data.seq !== undefined && data.seq !== null) return data;
+    const seq = await nextSeq();
+    return { ...(data || {}), seq };
+  }
+
   // ==========================
-  // 1) اليمن: حظر مباشر أسبوع + عداد + seq عند أول حظر فقط
+  // 1) اليمن: حظر مباشر أسبوع + عداد
   // ==========================
   if (country === "YE") {
 
@@ -38,15 +45,7 @@ export async function onRequest(context) {
       const banKey = `ban:YE:${ip}`;
       const logKey = `log:YE:${ip}`;
 
-      // هل هو محظور من قبل؟ (عشان ما نزيد seq كل مرة)
-      const alreadyBanned = await store.get(banKey);
-
-      let seq;
-      if (!alreadyBanned) {
-        seq = await nextSeq(); // حظر جديد -> رقم جديد
-      }
-
-      // ضع الحظر أسبوع (حتى لو كان موجود نحدث TTL)
+      // ضع الحظر أسبوع
       await store.put(banKey, "1", { expirationTtl: weekSeconds });
 
       // عداد المحاولات
@@ -59,8 +58,8 @@ export async function onRequest(context) {
       data.c = (data.c || 0) + 1;
       data.t = now;
 
-      // خزّن seq فقط إذا كان هذا "حظر جديد"
-      if (seq !== undefined) data.seq = seq;
+      // أضف seq لأول مرة فقط (أو إذا كان سجل قديم بدون seq)
+      data = await ensureSeq(data);
 
       await store.put(logKey, JSON.stringify(data), { expirationTtl: weekSeconds });
     }
@@ -104,12 +103,11 @@ export async function onRequest(context) {
   const countKey = `cnt:SA:${ip}`;
 
   // ==========================
-  // 4) إذا محظور → زد العداد وأعد صفحة المنع (بدون seq)
+  // 4) إذا محظور → زد العداد وأعد صفحة المنع
   // ==========================
   const banned = await store.get(banKey);
   if (banned) {
 
-    // زيادة عداد المحاولات أثناء الحظر
     let data = { c: 0, t: now };
     const raw = await store.get(countKey);
     if (raw) {
@@ -118,6 +116,9 @@ export async function onRequest(context) {
 
     data.c = (data.c || 0) + 1;
     data.t = now;
+
+    // أضف seq إن لم يكن موجود (لا يغيّر الحظر)
+    data = await ensureSeq(data);
 
     await store.put(countKey, JSON.stringify(data), { expirationTtl: weekSeconds });
 
@@ -154,14 +155,13 @@ export async function onRequest(context) {
 
   data.c = (data.c || 0) + 1;
 
-  if (data.c > MAX_ALLOWED) {
-    // حظر جديد للسعودية -> seq جديد
-    const seq = await nextSeq();
+  // أضف seq لأول مرة فقط (أو لو سجل قديم بدون seq)
+  data = await ensureSeq(data);
 
+  if (data.c > MAX_ALLOWED) {
     await store.put(banKey, "1", { expirationTtl: weekSeconds });
 
-    // نخزن نفس سجل العداد لكن نخليه يعيش أسبوع بعد الحظر + نضيف seq
-    data.seq = seq;
+    // بعد الحظر نخلي سجل العداد يعيش أسبوع
     await store.put(countKey, JSON.stringify(data), { expirationTtl: weekSeconds });
 
     return new Response(`<!doctype html>
