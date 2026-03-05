@@ -15,8 +15,22 @@ export async function onRequest(context) {
   const now = Math.floor(Date.now() / 1000);
   const weekSeconds = BAN_HOURS * 3600;
 
+  // ===== ترقيم عالمي يزيد فقط عند "حظر جديد" =====
+  async function nextSeq() {
+    const key = "global:seq";
+    let n = 0;
+    const raw = await store.get(key);
+    if (raw) {
+      const parsed = parseInt(raw, 10);
+      if (!Number.isNaN(parsed)) n = parsed;
+    }
+    n += 1;
+    await store.put(key, String(n)); // بدون TTL (يبقى محفوظ دائمًا)
+    return n;
+  }
+
   // ==========================
-  // 1) اليمن: حظر مباشر أسبوع + عداد
+  // 1) اليمن: حظر مباشر أسبوع + عداد + seq عند أول حظر فقط
   // ==========================
   if (country === "YE") {
 
@@ -24,7 +38,15 @@ export async function onRequest(context) {
       const banKey = `ban:YE:${ip}`;
       const logKey = `log:YE:${ip}`;
 
-      // ضع الحظر أسبوع
+      // هل هو محظور من قبل؟ (عشان ما نزيد seq كل مرة)
+      const alreadyBanned = await store.get(banKey);
+
+      let seq;
+      if (!alreadyBanned) {
+        seq = await nextSeq(); // حظر جديد -> رقم جديد
+      }
+
+      // ضع الحظر أسبوع (حتى لو كان موجود نحدث TTL)
       await store.put(banKey, "1", { expirationTtl: weekSeconds });
 
       // عداد المحاولات
@@ -34,8 +56,11 @@ export async function onRequest(context) {
         try { data = JSON.parse(raw); } catch {}
       }
 
-      data.c += 1;
+      data.c = (data.c || 0) + 1;
       data.t = now;
+
+      // خزّن seq فقط إذا كان هذا "حظر جديد"
+      if (seq !== undefined) data.seq = seq;
 
       await store.put(logKey, JSON.stringify(data), { expirationTtl: weekSeconds });
     }
@@ -79,7 +104,7 @@ export async function onRequest(context) {
   const countKey = `cnt:SA:${ip}`;
 
   // ==========================
-  // 4) إذا محظور → زد العداد وأعد صفحة المنع
+  // 4) إذا محظور → زد العداد وأعد صفحة المنع (بدون seq)
   // ==========================
   const banned = await store.get(banKey);
   if (banned) {
@@ -91,7 +116,7 @@ export async function onRequest(context) {
       try { data = JSON.parse(raw); } catch {}
     }
 
-    data.c += 1;
+    data.c = (data.c || 0) + 1;
     data.t = now;
 
     await store.put(countKey, JSON.stringify(data), { expirationTtl: weekSeconds });
@@ -127,11 +152,16 @@ export async function onRequest(context) {
     data = { c: 0, t: now };
   }
 
-  data.c += 1;
+  data.c = (data.c || 0) + 1;
 
   if (data.c > MAX_ALLOWED) {
+    // حظر جديد للسعودية -> seq جديد
+    const seq = await nextSeq();
 
     await store.put(banKey, "1", { expirationTtl: weekSeconds });
+
+    // نخزن نفس سجل العداد لكن نخليه يعيش أسبوع بعد الحظر + نضيف seq
+    data.seq = seq;
     await store.put(countKey, JSON.stringify(data), { expirationTtl: weekSeconds });
 
     return new Response(`<!doctype html>
