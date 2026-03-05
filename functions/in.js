@@ -15,25 +15,18 @@ export async function onRequest(context) {
   const now = Math.floor(Date.now() / 1000);
   const weekSeconds = BAN_HOURS * 3600;
 
-  // ===== ترقيم عالمي =====
-  async function nextSeq() {
-    const key = "Global:seq"; // نفس اللي ظهر عندك
-    let n = 0;
-    const raw = await store.get(key);
-    if (raw) {
-      const parsed = parseInt(raw, 10);
-      if (!Number.isNaN(parsed)) n = parsed;
-    }
-    n += 1;
-    await store.put(key, String(n)); // بدون TTL
-    return n;
-  }
-
-  // يضمن وجود seq داخل السجل (بدون تغيير c/t)
-  async function ensureSeq(data) {
-    if (data && data.seq !== undefined && data.seq !== null) return data;
-    const seq = await nextSeq();
-    return { ...(data || {}), seq };
+  // ===== وقت مقروء (توقيت السعودية UTC+3) =====
+  function pad(n){ return String(n).padStart(2, "0"); }
+  function ksaTsFromNowSec(nowSec){
+    // نحول الثواني إلى ميللي ثم نضيف +3 ساعات
+    const d = new Date((nowSec + 3 * 3600) * 1000);
+    const y = d.getUTCFullYear();
+    const m = pad(d.getUTCMonth() + 1);
+    const day = pad(d.getUTCDate());
+    const hh = pad(d.getUTCHours());
+    const mm = pad(d.getUTCMinutes());
+    const ss = pad(d.getUTCSeconds());
+    return `${y}-${m}-${day} ${hh}:${mm}:${ss} KSA`;
   }
 
   // ==========================
@@ -55,11 +48,9 @@ export async function onRequest(context) {
         try { data = JSON.parse(raw); } catch {}
       }
 
-      data.c = (data.c || 0) + 1;
+      data.c += 1;
       data.t = now;
-
-      // أضف seq لأول مرة فقط (أو إذا كان سجل قديم بدون seq)
-      data = await ensureSeq(data);
+      data.ts = ksaTsFromNowSec(now); // <<< إضافة فقط
 
       await store.put(logKey, JSON.stringify(data), { expirationTtl: weekSeconds });
     }
@@ -108,17 +99,16 @@ export async function onRequest(context) {
   const banned = await store.get(banKey);
   if (banned) {
 
+    // زيادة عداد المحاولات أثناء الحظر
     let data = { c: 0, t: now };
     const raw = await store.get(countKey);
     if (raw) {
       try { data = JSON.parse(raw); } catch {}
     }
 
-    data.c = (data.c || 0) + 1;
+    data.c += 1;
     data.t = now;
-
-    // أضف seq إن لم يكن موجود (لا يغيّر الحظر)
-    data = await ensureSeq(data);
+    data.ts = ksaTsFromNowSec(now); // <<< إضافة فقط
 
     await store.put(countKey, JSON.stringify(data), { expirationTtl: weekSeconds });
 
@@ -153,15 +143,12 @@ export async function onRequest(context) {
     data = { c: 0, t: now };
   }
 
-  data.c = (data.c || 0) + 1;
-
-  // أضف seq لأول مرة فقط (أو لو سجل قديم بدون seq)
-  data = await ensureSeq(data);
+  data.c += 1;
+  data.ts = ksaTsFromNowSec(now); // <<< إضافة فقط
 
   if (data.c > MAX_ALLOWED) {
-    await store.put(banKey, "1", { expirationTtl: weekSeconds });
 
-    // بعد الحظر نخلي سجل العداد يعيش أسبوع
+    await store.put(banKey, "1", { expirationTtl: weekSeconds });
     await store.put(countKey, JSON.stringify(data), { expirationTtl: weekSeconds });
 
     return new Response(`<!doctype html>
