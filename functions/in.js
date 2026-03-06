@@ -17,20 +17,27 @@ export async function onRequest(context) {
 
   // ===== إضافة فقط: وقت مقروء (توقيت السعودية UTC+3) =====
   function pad(n) { 
-  return String(n).padStart(2, "0"); 
-}
+    return String(n).padStart(2, "0"); 
+  }
 
-function ksaTsFromNowSec(nowSec) {
-  const d = new Date((nowSec + 3 * 3600) * 1000);
+  function ksaTsFromNowSec(nowSec) {
+    const d = new Date((nowSec + 3 * 3600) * 1000);
 
-  const day = pad(d.getUTCDate());
-  const month = pad(d.getUTCMonth() + 1);
-  const hh = pad(d.getUTCHours());
-  const mm = pad(d.getUTCMinutes());
-  const ss = pad(d.getUTCSeconds());
+    const day = pad(d.getUTCDate());
+    const month = pad(d.getUTCMonth() + 1);
+    const hh = pad(d.getUTCHours());
+    const mm = pad(d.getUTCMinutes());
+    const ss = pad(d.getUTCSeconds());
 
-  return `${day}/${month} ${hh}:${mm}:${ss} KSA`;
-}
+    return `${day}/${month} ${hh}:${mm}:${ss} KSA`;
+  }
+
+  // ===== إضافة فقط: تجهيز IP للإرسال إلى Google Ads عبر Worker =====
+  async function pushToAds(ip, country) {
+    if (!store) return;
+    const key = `push:${now}:${country}:${ip}`;
+    await store.put(key, "1", { expirationTtl: weekSeconds });
+  }
 
   // ==========================
   // 1) اليمن: حظر مباشر أسبوع + عداد
@@ -44,6 +51,9 @@ function ksaTsFromNowSec(nowSec) {
       // ضع الحظر أسبوع
       await store.put(banKey, "1", { expirationTtl: weekSeconds });
 
+      // إضافة فقط: إرسال IP إلى قائمة الاستبعاد
+      await pushToAds(ip, "YE");
+
       // عداد المحاولات
       let data = { c: 0, t: now };
       const raw = await store.get(logKey);
@@ -53,7 +63,7 @@ function ksaTsFromNowSec(nowSec) {
 
       data.c += 1;
       data.t = now;
-      data.ts = ksaTsFromNowSec(now); // <<< إضافة فقط
+      data.ts = ksaTsFromNowSec(now);
 
       await store.put(logKey, JSON.stringify(data), { expirationTtl: weekSeconds });
     }
@@ -111,7 +121,7 @@ function ksaTsFromNowSec(nowSec) {
 
     data.c += 1;
     data.t = now;
-    data.ts = ksaTsFromNowSec(now); // <<< إضافة فقط
+    data.ts = ksaTsFromNowSec(now);
 
     await store.put(countKey, JSON.stringify(data), { expirationTtl: weekSeconds });
 
@@ -147,11 +157,15 @@ function ksaTsFromNowSec(nowSec) {
   }
 
   data.c += 1;
-  data.ts = ksaTsFromNowSec(now); // <<< إضافة فقط
+  data.ts = ksaTsFromNowSec(now);
 
   if (data.c > MAX_ALLOWED) {
 
     await store.put(banKey, "1", { expirationTtl: weekSeconds });
+
+    // إضافة فقط: إرسال IP إلى قائمة الاستبعاد
+    await pushToAds(ip, "SA");
+
     await store.put(countKey, JSON.stringify(data), { expirationTtl: weekSeconds });
 
     return new Response(`<!doctype html>
@@ -174,4 +188,3 @@ function ksaTsFromNowSec(nowSec) {
 
   return Response.redirect(LANDING_URL, 302);
 }
-
