@@ -15,9 +15,8 @@ export async function onRequest(context) {
   const now = Math.floor(Date.now() / 1000);
   const weekSeconds = BAN_HOURS * 3600;
 
-  // ===== إضافة فقط: وقت مقروء (توقيت السعودية UTC+3) =====
-  function pad(n) { 
-    return String(n).padStart(2, "0"); 
+  function pad(n) {
+    return String(n).padStart(2, "0");
   }
 
   function ksaTsFromNowSec(nowSec) {
@@ -32,29 +31,33 @@ export async function onRequest(context) {
     return `${day}/${month} ${hh}:${mm}:${ss} KSA`;
   }
 
-  // ===== إضافة فقط: تجهيز IP للإرسال إلى Google Ads عبر Worker =====
   async function pushToAds(ip, country) {
     if (!store) return;
     const key = `push:${now}:${country}:${ip}`;
     await store.put(key, "1", { expirationTtl: weekSeconds });
   }
 
-  // ==========================
-  // 1) اليمن: حظر مباشر أسبوع + عداد
-  // ==========================
-  if (country === "YE") {
+  function getTargetUrl() {
+    const page = url.searchParams.get("p");
 
+    let target = LANDING_URL;
+
+    if (page === "services") target = LANDING_URL + "services";
+    if (page === "process") target = LANDING_URL + "process";
+    if (page === "contact") target = LANDING_URL + "contact";
+
+    return target;
+  }
+
+  // 1) اليمن: حظر مباشر أسبوع + عداد
+  if (country === "YE") {
     if (store) {
       const banKey = `ban:YE:${ip}`;
       const logKey = `log:YE:${ip}`;
 
-      // ضع الحظر أسبوع
       await store.put(banKey, "1", { expirationTtl: weekSeconds });
-
-      // إضافة فقط: إرسال IP إلى قائمة الاستبعاد
       await pushToAds(ip, "YE");
 
-      // عداد المحاولات
       let data = { c: 0, t: now };
       const raw = await store.get(logKey);
       if (raw) {
@@ -84,35 +87,27 @@ export async function onRequest(context) {
     });
   }
 
-  // ==========================
   // 2) تنظيف k
-  // ==========================
   if (url.searchParams.has("k")) {
     url.searchParams.delete("k");
     return Response.redirect(url.toString(), 302);
   }
 
   if (!store) {
-    return Response.redirect(LANDING_URL, 302);
+    return Response.redirect(getTargetUrl(), 302);
   }
 
-  // ==========================
-  // 3) غير السعودية: تحويل طبيعي
-  // ==========================
+  // 3) غير السعودية: تحويل طبيعي للصفحة المطلوبة
   if (country !== "SA") {
-    return Response.redirect(LANDING_URL, 302);
+    return Response.redirect(getTargetUrl(), 302);
   }
 
   const banKey = `ban:SA:${ip}`;
   const countKey = `cnt:SA:${ip}`;
 
-  // ==========================
   // 4) إذا محظور → زد العداد وأعد صفحة المنع
-  // ==========================
   const banned = await store.get(banKey);
   if (banned) {
-
-    // زيادة عداد المحاولات أثناء الحظر
     let data = { c: 0, t: now };
     const raw = await store.get(countKey);
     if (raw) {
@@ -141,9 +136,7 @@ export async function onRequest(context) {
     });
   }
 
-  // ==========================
   // 5) عداد 24 ساعة للسعودية
-  // ==========================
   const windowSeconds = WINDOW_HOURS * 3600;
 
   let data = { c: 0, t: now };
@@ -160,12 +153,8 @@ export async function onRequest(context) {
   data.ts = ksaTsFromNowSec(now);
 
   if (data.c > MAX_ALLOWED) {
-
     await store.put(banKey, "1", { expirationTtl: weekSeconds });
-
-    // إضافة فقط: إرسال IP إلى قائمة الاستبعاد
     await pushToAds(ip, "SA");
-
     await store.put(countKey, JSON.stringify(data), { expirationTtl: weekSeconds });
 
     return new Response(`<!doctype html>
@@ -186,14 +175,5 @@ export async function onRequest(context) {
 
   await store.put(countKey, JSON.stringify(data), { expirationTtl: windowSeconds });
 
-  // تحديد الصفحة المطلوبة
-const page = url.searchParams.get("p");
-
-let target = LANDING_URL;
-
-if (page === "services") target = LANDING_URL + "services";
-if (page === "process") target = LANDING_URL + "process";
-if (page === "contact") target = LANDING_URL + "contact";
-
-return Response.redirect(target, 302);
+  return Response.redirect(getTargetUrl(), 302);
 }
