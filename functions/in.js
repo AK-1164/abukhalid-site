@@ -186,5 +186,14 @@ export async function onRequest(context) {
 
   await store.put(countKey, JSON.stringify(data), { expirationTtl: windowSeconds });
 
-  return Response.redirect(LANDING_URL, 302);
+  // تحديد الصفحة المطلوبة
+const page = url.searchParams.get("p");
+
+let target = LANDING_URL;
+
+if (page === "services") target = LANDING_URL + "services";
+if (page === "process") target = LANDING_URL + "process";
+if (page === "contact") target = LANDING_URL + "contact";
+
+return Response.redirect(target, 302);
 }
