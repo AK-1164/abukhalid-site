@@ -48,7 +48,7 @@ export async function onRequest(context) {
     const workerUrl = env.WORKER_URL;
     const sharedSecret = env.WORKER_SHARED_SECRET;
 
-    if (!workerUrl || !sharedSecret || !store) return;
+    if (!workerUrl || !sharedSecret) return;
 
     const payload = JSON.stringify({ ip, country, ts: now });
 
@@ -62,43 +62,152 @@ export async function onRequest(context) {
         body: payload,
       })
         .then(async (res) => {
-          // إذا فشل worker أو رفض الطلب، خزّن push احتياطيًا
-          if (!res.ok) {
+          // إذا فشل worker أو رفض الطلب، خزّن push احتياطيًا في KV إن كان متاحًا
+          if (!res.ok && store) {
             const key = `push:${now}:${country}:${ip}`;
             await store.put(key, "1", { expirationTtl: weekSeconds });
           }
         })
         .catch(async () => {
-          // إذا فشل الاتصال نهائيًا، خزّن push احتياطيًا
-          const key = `push:${now}:${country}:${ip}`;
-          await store.put(key, "1", { expirationTtl: weekSeconds });
+          // إذا فشل الاتصال نهائيًا، خزّن push احتياطيًا في KV إن كان متاحًا
+          if (store) {
+            const key = `push:${now}:${country}:${ip}`;
+            await store.put(key, "1", { expirationTtl: weekSeconds });
+          }
         })
     );
   }
 
-  // 1) اليمن: حظر مباشر أسبوع + عداد
-  if (country === "YE") {
-    if (store) {
-      const banKey = `ban:YE:${ip}`;
-      const logKey = `log:YE:${ip}`;
+  // فحص IP عبر Durable Object
+  async function checkIpWithDurableObject() {
+    const doWorkerUrl = env.DO_WORKER_URL;
+    const sharedSecret = env.WORKER_SHARED_SECRET;
 
-      await store.put(banKey, "1", { expirationTtl: weekSeconds });
+    if (!doWorkerUrl || !sharedSecret) return null;
 
-      // إرسال فوري في الخلفية بدون تعطيل العميل
+    try {
+      const res = await fetch(`${doWorkerUrl}/do-check`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "x-worker-secret": sharedSecret,
+        },
+        body: JSON.stringify({ ip, country }),
+      });
+
+      if (!res.ok) return null;
+
+      return await res.json();
+    } catch {
+      return null;
+    }
+  }
+
+  // 1) تنظيف k أولًا
+  if (url.searchParams.has("k")) {
+    url.searchParams.delete("k");
+    return Response.redirect(url.toString(), 302);
+  }
+
+  // 2) المسار الأساسي: Durable Object
+  const doResult = await checkIpWithDurableObject();
+
+  if (doResult) {
+    // اليمن: حظر مباشر
+    if (doResult.action === "ban" && doResult.reason === "YE") {
       sendIpToWorkerInBackground(ip, "YE");
 
-      let data = { c: 0, t: now };
-      const raw = await store.get(logKey);
-      if (raw) {
-        try { data = JSON.parse(raw); } catch {}
-      }
-
-      data.c += 1;
-      data.t = now;
-      data.ts = ksaTsFromNowSec(now);
-
-      await store.put(logKey, JSON.stringify(data), { expirationTtl: weekSeconds });
+      return new Response(`<!doctype html>
+<html lang="ar">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>خدمة غير متاحة</title>
+</head>
+<body style="font-family:system-ui;padding:24px">
+<h2>خدمة غير متاحة</h2>
+</body>
+</html>`, {
+        status: 403,
+        headers: { "Content-Type": "text/html; charset=utf-8" }
+      });
     }
+
+    // غير السعودية: دخول عادي
+    if (country !== "SA" && doResult.action === "allow") {
+      return Response.redirect(getTargetUrl(), 302);
+    }
+
+    // السعودية: إذا محظور مسبقًا
+    if (doResult.action === "ban" && doResult.reason === "already_banned") {
+      return new Response(`<!doctype html>
+<html lang="ar">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>غير متاح</title>
+</head>
+<body style="font-family:system-ui;padding:24px">
+<h2>غير متاح</h2>
+</body>
+</html>`, {
+        status: 200,
+        headers: { "Content-Type": "text/html; charset=utf-8" }
+      });
+    }
+
+    // السعودية: إذا تجاوز الحد
+    if (doResult.action === "ban" && doResult.reason === "too_many_clicks") {
+      sendIpToWorkerInBackground(ip, "SA");
+
+      return new Response(`<!doctype html>
+<html lang="ar">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>غير متاح</title>
+</head>
+<body style="font-family:system-ui;padding:24px">
+<h2>غير متاح</h2>
+</body>
+</html>`, {
+        status: 200,
+        headers: { "Content-Type": "text/html; charset=utf-8" }
+      });
+    }
+
+    // السعودية: دخول عادي
+    if (doResult.action === "allow") {
+      return Response.redirect(getTargetUrl(), 302);
+    }
+  }
+
+  // 3) خطة احتياط: النظام القديم عبر KV إذا تعذر Durable Object
+  if (!store) {
+    return Response.redirect(getTargetUrl(), 302);
+  }
+
+  // اليمن: حظر مباشر أسبوع + عداد
+  if (country === "YE") {
+    const banKey = `ban:YE:${ip}`;
+    const logKey = `log:YE:${ip}`;
+
+    await store.put(banKey, "1", { expirationTtl: weekSeconds });
+
+    // إرسال فوري في الخلفية بدون تعطيل العميل
+    sendIpToWorkerInBackground(ip, "YE");
+
+    let data = { c: 0, t: now };
+    const raw = await store.get(logKey);
+    if (raw) {
+      try { data = JSON.parse(raw); } catch {}
+    }
+
+    data.c += 1;
+    data.t = now;
+    data.ts = ksaTsFromNowSec(now);
+
+    await store.put(logKey, JSON.stringify(data), { expirationTtl: weekSeconds });
 
     return new Response(`<!doctype html>
 <html lang="ar">
@@ -116,17 +225,7 @@ export async function onRequest(context) {
     });
   }
 
-  // 2) تنظيف k
-  if (url.searchParams.has("k")) {
-    url.searchParams.delete("k");
-    return Response.redirect(url.toString(), 302);
-  }
-
-  if (!store) {
-    return Response.redirect(getTargetUrl(), 302);
-  }
-
-  // 3) غير السعودية: تحويل طبيعي للصفحة المطلوبة
+  // غير السعودية: تحويل طبيعي للصفحة المطلوبة
   if (country !== "SA") {
     return Response.redirect(getTargetUrl(), 302);
   }
@@ -134,7 +233,7 @@ export async function onRequest(context) {
   const banKey = `ban:SA:${ip}`;
   const countKey = `cnt:SA:${ip}`;
 
-  // 4) إذا محظور → زد العداد وأعد صفحة المنع
+  // إذا محظور → زد العداد وأعد صفحة المنع
   const banned = await store.get(banKey);
   if (banned) {
     let data = { c: 0, t: now };
@@ -165,7 +264,7 @@ export async function onRequest(context) {
     });
   }
 
-  // 5) عداد 24 ساعة للسعودية
+  // عداد 24 ساعة للسعودية
   const windowSeconds = WINDOW_HOURS * 3600;
 
   let data = { c: 0, t: now };
