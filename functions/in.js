@@ -31,12 +31,6 @@ export async function onRequest(context) {
     return `${day}/${month} ${hh}:${mm}:${ss} KSA`;
   }
 
-  async function pushToAds(ip, country) {
-    if (!store) return;
-    const key = `push:${now}:${country}:${ip}`;
-    await store.put(key, "1", { expirationTtl: weekSeconds });
-  }
-
   function getTargetUrl() {
     const page = url.searchParams.get("p");
 
@@ -49,6 +43,39 @@ export async function onRequest(context) {
     return target;
   }
 
+  // إرسال خلفي سريع إلى worker بدون تعطيل العميل
+  function sendIpToWorkerInBackground(ip, country) {
+    const workerUrl = env.WORKER_URL;
+    const sharedSecret = env.WORKER_SHARED_SECRET;
+
+    if (!workerUrl || !sharedSecret || !store) return;
+
+    const payload = JSON.stringify({ ip, country, ts: now });
+
+    context.waitUntil(
+      fetch(workerUrl, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "x-worker-secret": sharedSecret,
+        },
+        body: payload,
+      })
+        .then(async (res) => {
+          // إذا فشل worker أو رفض الطلب، خزّن push احتياطيًا
+          if (!res.ok) {
+            const key = `push:${now}:${country}:${ip}`;
+            await store.put(key, "1", { expirationTtl: weekSeconds });
+          }
+        })
+        .catch(async () => {
+          // إذا فشل الاتصال نهائيًا، خزّن push احتياطيًا
+          const key = `push:${now}:${country}:${ip}`;
+          await store.put(key, "1", { expirationTtl: weekSeconds });
+        })
+    );
+  }
+
   // 1) اليمن: حظر مباشر أسبوع + عداد
   if (country === "YE") {
     if (store) {
@@ -56,7 +83,9 @@ export async function onRequest(context) {
       const logKey = `log:YE:${ip}`;
 
       await store.put(banKey, "1", { expirationTtl: weekSeconds });
-      await pushToAds(ip, "YE");
+
+      // إرسال فوري في الخلفية بدون تعطيل العميل
+      sendIpToWorkerInBackground(ip, "YE");
 
       let data = { c: 0, t: now };
       const raw = await store.get(logKey);
@@ -154,7 +183,10 @@ export async function onRequest(context) {
 
   if (data.c > MAX_ALLOWED) {
     await store.put(banKey, "1", { expirationTtl: weekSeconds });
-    await pushToAds(ip, "SA");
+
+    // إرسال فوري في الخلفية بدون تعطيل العميل
+    sendIpToWorkerInBackground(ip, "SA");
+
     await store.put(countKey, JSON.stringify(data), { expirationTtl: weekSeconds });
 
     return new Response(`<!doctype html>
