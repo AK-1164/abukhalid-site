@@ -2,7 +2,7 @@ export async function onRequest(context) {
   const { request, env } = context;
 
   const LANDING_URL = "https://abukhalid.pages.dev/";
-  const MAX_ALLOWED = 2;      // مرتين فقط للسعودية، والثالثة حظر
+  const MAX_ALLOWED = 2;      // يسمح بنقرتين، والثالثة حظر
   const WINDOW_HOURS = 24;    // خلال 24 ساعة
   const BAN_HOURS = 168;      // حظر أسبوع
 
@@ -22,8 +22,8 @@ export async function onRequest(context) {
     let target = LANDING_URL;
 
     if (page === "services") target = LANDING_URL + "services";
-    if (page === "process") target = LANDING_URL + "process";
-    if (page === "contact") target = LANDING_URL + "contact";
+    else if (page === "process") target = LANDING_URL + "process";
+    else if (page === "contact") target = LANDING_URL + "contact";
 
     return target;
   }
@@ -45,74 +45,124 @@ export async function onRequest(context) {
     });
   }
 
-  // إرسال خلفي سريع إلى worker بدون تعطيل العميل
+  async function logWorkerAttempt(ip, statusText) {
+    if (!db || !ip) return;
+    try {
+      await db.prepare(`
+        UPDATE ip_logs
+        SET last_push_status = ?
+        WHERE ip = ?
+      `).bind(statusText, ip).run();
+    } catch (err) {
+      console.log("logWorkerAttempt failed", String(err));
+    }
+  }
+
   function sendIpToWorkerInBackground(ip, country) {
     const workerUrl = env.WORKER_URL;
     const sharedSecret = env.WORKER_SHARED_SECRET;
 
-    if (!workerUrl || !sharedSecret) return;
+    if (!workerUrl || !sharedSecret) {
+      console.log("Worker config missing", {
+        hasWorkerUrl: !!workerUrl,
+        hasSharedSecret: !!sharedSecret,
+        ip,
+        country,
+      });
+
+      context.waitUntil(logWorkerAttempt(ip, "worker_config_missing"));
+      return;
+    }
 
     const payload = JSON.stringify({ ip, country, ts: now });
 
-    context.waitUntil(
-      fetch(workerUrl, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "x-worker-secret": sharedSecret,
-        },
-        body: payload,
-      }).catch(() => {})
-    );
+    context.waitUntil((async () => {
+      try {
+        const res = await fetch(workerUrl, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "x-worker-secret": sharedSecret,
+          },
+          body: payload,
+        });
+
+        const text = await res.text();
+
+        console.log("Worker response", {
+          status: res.status,
+          ok: res.ok,
+          body: text,
+          ip,
+          country,
+        });
+
+        await logWorkerAttempt(ip, `worker_http_${res.status}: ${String(text).slice(0, 200)}`);
+      } catch (err) {
+        const msg = String(err?.message || err || "unknown worker fetch error");
+        console.log("Worker fetch failed", { ip, country, error: msg });
+        await logWorkerAttempt(ip, `worker_fetch_failed: ${msg.slice(0, 200)}`);
+      }
+    })());
   }
 
-  // تنظيف k أولًا
+  // إزالة k ثم إعادة التوجيه
+  // هذا السلوك يبقي منطقك كما هو
   if (url.searchParams.has("k")) {
     url.searchParams.delete("k");
     return Response.redirect(url.toString(), 302);
   }
 
-  // إذا لم يكن DB موجودًا لا نكسر الموقع
   if (!db) {
+    console.log("DB binding missing in Pages Function");
+
     if (country === "YE") {
       sendIpToWorkerInBackground(ip, "YE");
       return unavailableHtml("خدمة غير متاحة", "خدمة غير متاحة", 403);
     }
+
     return Response.redirect(getTargetUrl(), 302);
   }
 
-  // اجلب السجل الحالي إن وجد
-  const row = await db
-    .prepare(`SELECT * FROM ip_logs WHERE ip = ?`)
-    .bind(ip)
-    .first();
+  let row = null;
+  try {
+    row = await db.prepare(`SELECT * FROM ip_logs WHERE ip = ?`).bind(ip).first();
+  } catch (err) {
+    console.log("Failed to read ip_logs", { ip, error: String(err) });
+    return new Response("Database read error", { status: 500 });
+  }
 
-  // اليمن: حظر مباشر دائمًا
+  // اليمن: حظر مباشر
   if (country === "YE") {
     const shouldSend = !row || Number(row.pushed_to_ads || 0) !== 1;
 
-    if (!row) {
-      await db.prepare(`
-        INSERT INTO ip_logs (
-          ip, country, clicks, banned, banned_until,
-          first_seen, last_seen, last_action, pushed_to_ads, last_push_status
-        ) VALUES (?, ?, 1, 1, ?, ?, ?, 'ye_block', 0, 'pending')
-      `).bind(ip, country, now + weekSeconds, now, now).run();
-    } else {
-      await db.prepare(`
-        UPDATE ip_logs
-        SET country = ?,
-            clicks = clicks + 1,
-            banned = 1,
-            banned_until = ?,
-            last_seen = ?,
-            last_action = 'ye_block',
-            last_push_status = CASE
-              WHEN pushed_to_ads = 1 THEN last_push_status
-              ELSE 'pending'
-            END
-        WHERE ip = ?
-      `).bind(country, now + weekSeconds, now, ip).run();
+    try {
+      if (!row) {
+        await db.prepare(`
+          INSERT INTO ip_logs (
+            ip, country, clicks, banned, banned_until,
+            first_seen, last_seen, last_action, pushed_to_ads, last_push_status
+          ) VALUES (?, ?, 1, 1, ?, ?, ?, 'ye_block', 0, 'pending')
+        `).bind(ip, country, now + weekSeconds, now, now).run();
+      } else {
+        await db.prepare(`
+          UPDATE ip_logs
+          SET country = ?,
+              clicks = clicks + 1,
+              banned = 1,
+              banned_until = ?,
+              last_seen = ?,
+              last_action = 'ye_block',
+              last_push_status = CASE
+                WHEN pushed_to_ads = 1 THEN last_push_status
+                ELSE 'pending'
+              END
+          WHERE ip = ?
+        `).bind(country, now + weekSeconds, now, ip).run();
+      }
+    } catch (err) {
+      console.log("Failed to write YE log", { ip, error: String(err) });
+      return new Response("Database write error", { status: 500 });
     }
 
     if (shouldSend) {
@@ -122,58 +172,71 @@ export async function onRequest(context) {
     return unavailableHtml("خدمة غير متاحة", "خدمة غير متاحة", 403);
   }
 
-  // غير السعودية: دخول عادي مع تسجيل بسيط
+  // غير السعودية
   if (country !== "SA") {
-    if (!row) {
-      await db.prepare(`
-        INSERT INTO ip_logs (
-          ip, country, clicks, banned, banned_until,
-          first_seen, last_seen, last_action, pushed_to_ads, last_push_status
-        ) VALUES (?, ?, 1, 0, 0, ?, ?, 'allow_non_sa', 0, NULL)
-      `).bind(ip, country, now, now).run();
-    } else {
-      await db.prepare(`
-        UPDATE ip_logs
-        SET country = ?,
-            clicks = clicks + 1,
-            last_seen = ?,
-            last_action = 'allow_non_sa'
-        WHERE ip = ?
-      `).bind(country, now, ip).run();
+    try {
+      if (!row) {
+        await db.prepare(`
+          INSERT INTO ip_logs (
+            ip, country, clicks, banned, banned_until,
+            first_seen, last_seen, last_action, pushed_to_ads, last_push_status
+          ) VALUES (?, ?, 1, 0, 0, ?, ?, 'allow_non_sa', 0, NULL)
+        `).bind(ip, country, now, now).run();
+      } else {
+        await db.prepare(`
+          UPDATE ip_logs
+          SET country = ?,
+              clicks = clicks + 1,
+              last_seen = ?,
+              last_action = 'allow_non_sa'
+          WHERE ip = ?
+        `).bind(country, now, ip).run();
+      }
+    } catch (err) {
+      console.log("Failed to write non-SA log", { ip, error: String(err) });
+      return new Response("Database write error", { status: 500 });
     }
 
     return Response.redirect(getTargetUrl(), 302);
   }
 
-  // السعودية
+  // السعودية: أول مرة
   if (!row) {
-    await db.prepare(`
-      INSERT INTO ip_logs (
-        ip, country, clicks, banned, banned_until,
-        first_seen, last_seen, last_action, pushed_to_ads, last_push_status
-      ) VALUES (?, ?, 1, 0, 0, ?, ?, 'allow_sa', 0, NULL)
-    `).bind(ip, country, now, now).run();
+    try {
+      await db.prepare(`
+        INSERT INTO ip_logs (
+          ip, country, clicks, banned, banned_until,
+          first_seen, last_seen, last_action, pushed_to_ads, last_push_status
+        ) VALUES (?, ?, 1, 0, 0, ?, ?, 'allow_sa', 0, NULL)
+      `).bind(ip, country, now, now).run();
+    } catch (err) {
+      console.log("Failed to insert first SA visit", { ip, error: String(err) });
+      return new Response("Database write error", { status: 500 });
+    }
 
     return Response.redirect(getTargetUrl(), 302);
   }
 
-  // إذا محظور مسبقًا وما زال الحظر ساريًا
+  // محظور مسبقًا
   if (Number(row.banned || 0) === 1 && Number(row.banned_until || 0) > now) {
-    await db.prepare(`
-      UPDATE ip_logs
-      SET clicks = clicks + 1,
-          last_seen = ?,
-          last_action = 'blocked_existing'
-      WHERE ip = ?
-    `).bind(now, ip).run();
+    try {
+      await db.prepare(`
+        UPDATE ip_logs
+        SET clicks = clicks + 1,
+            last_seen = ?,
+            last_action = 'blocked_existing'
+        WHERE ip = ?
+      `).bind(now, ip).run();
+    } catch (err) {
+      console.log("Failed to update existing blocked SA", { ip, error: String(err) });
+    }
 
     return unavailableHtml("غير متاح", "غير متاح", 200);
   }
 
-  // إذا انتهت نافذة الـ 24 ساعة، نعيد العداد
   let clicks = Number(row.clicks || 0);
   let firstSeen = Number(row.first_seen || now);
-  let pushedToAds = Number(row.pushed_to_ads || 0);
+  const pushedToAds = Number(row.pushed_to_ads || 0);
 
   if ((now - firstSeen) > windowSeconds) {
     clicks = 0;
@@ -182,23 +245,28 @@ export async function onRequest(context) {
 
   clicks += 1;
 
-  // الثالثة = حظر مباشر
+  // الثالثة = حظر + إرسال للـ Worker
   if (clicks > MAX_ALLOWED) {
-    await db.prepare(`
-      UPDATE ip_logs
-      SET country = ?,
-          clicks = ?,
-          banned = 1,
-          banned_until = ?,
-          first_seen = ?,
-          last_seen = ?,
-          last_action = 'sa_block_third',
-          last_push_status = CASE
-            WHEN pushed_to_ads = 1 THEN last_push_status
-            ELSE 'pending'
-          END
-      WHERE ip = ?
-    `).bind(country, clicks, now + weekSeconds, firstSeen, now, ip).run();
+    try {
+      await db.prepare(`
+        UPDATE ip_logs
+        SET country = ?,
+            clicks = ?,
+            banned = 1,
+            banned_until = ?,
+            first_seen = ?,
+            last_seen = ?,
+            last_action = 'sa_block_third',
+            last_push_status = CASE
+              WHEN pushed_to_ads = 1 THEN last_push_status
+              ELSE 'pending'
+            END
+        WHERE ip = ?
+      `).bind(country, clicks, now + weekSeconds, firstSeen, now, ip).run();
+    } catch (err) {
+      console.log("Failed to update SA block third", { ip, error: String(err) });
+      return new Response("Database write error", { status: 500 });
+    }
 
     if (pushedToAds !== 1) {
       sendIpToWorkerInBackground(ip, "SA");
@@ -208,17 +276,22 @@ export async function onRequest(context) {
   }
 
   // ما زال مسموحًا
-  await db.prepare(`
-    UPDATE ip_logs
-    SET country = ?,
-        clicks = ?,
-        banned = 0,
-        banned_until = 0,
-        first_seen = ?,
-        last_seen = ?,
-        last_action = 'allow_sa'
-    WHERE ip = ?
-  `).bind(country, clicks, firstSeen, now, ip).run();
+  try {
+    await db.prepare(`
+      UPDATE ip_logs
+      SET country = ?,
+          clicks = ?,
+          banned = 0,
+          banned_until = 0,
+          first_seen = ?,
+          last_seen = ?,
+          last_action = 'allow_sa'
+      WHERE ip = ?
+    `).bind(country, clicks, firstSeen, now, ip).run();
+  } catch (err) {
+    console.log("Failed to update allowed SA", { ip, error: String(err) });
+    return new Response("Database write error", { status: 500 });
+  }
 
   return Response.redirect(getTargetUrl(), 302);
 }
